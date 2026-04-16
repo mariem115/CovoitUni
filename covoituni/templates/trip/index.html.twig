@@ -1,0 +1,89 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Trajets — {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="h3 fw-bold mb-3">Rechercher un trajet</h1>
+        <form class="card border-0 shadow-sm" method="get" action="{{ path('app_trip_index') }}">
+            <div class="card-body p-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Départ</label>
+                        <input type="text" name="departure" class="form-control" value="{{ departure }}" placeholder="Ville de départ" autocomplete="off">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Destination</label>
+                        <input type="text" name="destination" class="form-control" value="{{ destination }}" placeholder="Destination" autocomplete="off">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Date</label>
+                        <input type="date" name="date" class="form-control" value="{{ date }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Places min.</label>
+                        <input type="number" name="seats" class="form-control" value="{{ seats }}" min="1" max="8">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Rechercher</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <p class="small text-muted mb-2">Suggestions rapides :</p>
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="{{ path('app_trip_index', { departure: 'Tunis', destination: 'Sousse', seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-primary-subtle text-primary border">Tunis → Sousse</a>
+        <a href="{{ path('app_trip_index', { departure: 'Sousse', destination: 'Tunis', seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-primary-subtle text-primary border">Sousse → Tunis</a>
+        <a href="{{ path('app_trip_index', { departure: 'Tunis', seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-secondary-subtle text-secondary border">Au départ de Tunis</a>
+        <a href="{{ path('app_trip_index', { destination: 'Sousse', seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-secondary-subtle text-secondary border">Vers Sousse</a>
+        <a href="{{ path('app_trip_index', { seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-light text-dark border">Tous les trajets</a>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="text-muted small mb-0">{{ totalItems }} résultat{{ totalItems > 1 ? 's' : '' }}{% if totalPages > 1 %} · page {{ page }} / {{ totalPages }}{% endif %}</p>
+        {% if is_granted('ROLE_USER') %}
+            <a href="{{ path('app_trip_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Proposer un trajet</a>
+        {% endif %}
+    </div>
+
+    {% if trips is empty %}
+        <div class="card border-0 shadow-sm text-center py-5 px-4">
+            <i class="bi bi-inbox display-3 text-muted d-block mb-3" aria-hidden="true"></i>
+            <h2 class="h5 fw-semibold">Aucun trajet ne correspond à votre recherche</h2>
+            <p class="text-muted mb-4">Essayez d’élargir les critères ou proposez le vôtre.</p>
+            {% if is_granted('ROLE_USER') %}
+                <a href="{{ path('app_trip_new') }}" class="btn btn-primary">Publier un trajet</a>
+            {% else %}
+                <a href="{{ path('app_register') }}" class="btn btn-primary">Créer un compte</a>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="row g-4">
+            {% for trip in trips %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    {% include 'components/trip_card.html.twig' with { trip: trip } only %}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if totalPages > 1 %}
+            <nav class="mt-4 d-flex justify-content-center" aria-label="Pagination">
+                <ul class="pagination mb-0">
+                    <li class="page-item {{ page <= 1 ? 'disabled' : '' }}">
+                        <a class="page-link" href="{{ path('app_trip_index', app.request.query.all|merge({ page: page - 1 })) }}">Précédent</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">{{ page }} / {{ totalPages }}</span>
+                    </li>
+                    <li class="page-item {{ page >= totalPages ? 'disabled' : '' }}">
+                        <a class="page-link" href="{{ path('app_trip_index', app.request.query.all|merge({ page: page + 1 })) }}">Suivant</a>
+                    </li>
+                </ul>
+            </nav>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

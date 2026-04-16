@@ -1,0 +1,102 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le trajet — {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="h3 fw-bold mb-4">Modifier le trajet</h1>
+            <p class="text-muted small mb-4">{{ trip.departure }} → {{ trip.destination }} · publié le {{ trip.createdAt|date('d/m/Y') }}</p>
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            {{ form_start(form, { attr: { novalidate: 'novalidate', id: 'trip-form' } }) }}
+                            {{ form_row(form.departure) }}
+                            {{ form_row(form.destination) }}
+                            {{ form_row(form.departureDateTime) }}
+                            {{ form_row(form.seatsTotal) }}
+                            {{ form_row(form.pricePerSeat) }}
+                            {{ form_row(form.description) }}
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                            <a href="{{ path('app_trip_show', { id: trip.id }) }}" class="btn btn-link">Annuler</a>
+                            {{ form_end(form) }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm bg-primary-subtle border-primary-subtle sticky-lg-top" style="top: 5rem;">
+                        <div class="card-body p-4">
+                            <h2 class="h6 fw-semibold mb-3">Aperçu</h2>
+                            <div id="trip-preview" class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <p class="fw-semibold mb-1">
+                                        <span id="pv-dep">—</span>
+                                        <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                                        <span id="pv-dest">—</span>
+                                    </p>
+                                    <p class="small text-muted mb-2" id="pv-datetime">—</p>
+                                    <p class="small mb-1"><span class="badge bg-primary-subtle text-primary border" id="pv-seats">—</span></p>
+                                    <p class="small mb-0" id="pv-price">—</p>
+                                    <p class="small text-muted mt-2 mb-0" id="pv-desc" style="white-space: pre-wrap; display: none;"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+    (function () {
+        const form = document.getElementById('trip-form');
+        if (!form) return;
+        const dep = form.querySelector('[name="trip[departure]"]');
+        const dest = form.querySelector('[name="trip[destination]"]');
+        const dt = form.querySelector('[name="trip[departureDateTime]"]');
+        const seats = form.querySelector('[name="trip[seatsTotal]"]');
+        const price = form.querySelector('[name="trip[pricePerSeat]"]');
+        const desc = form.querySelector('[name="trip[description]"]');
+        const pvDep = document.getElementById('pv-dep');
+        const pvDest = document.getElementById('pv-dest');
+        const pvDt = document.getElementById('pv-datetime');
+        const pvSeats = document.getElementById('pv-seats');
+        const pvPrice = document.getElementById('pv-price');
+        const pvDesc = document.getElementById('pv-desc');
+        function upd() {
+            pvDep.textContent = (dep && dep.value.trim()) ? dep.value.trim() : '—';
+            pvDest.textContent = (dest && dest.value.trim()) ? dest.value.trim() : '—';
+            if (dt && dt.value) {
+                const d = new Date(dt.value);
+                if (!isNaN(d.getTime())) {
+                    pvDt.textContent = 'Départ : ' + d.toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
+                } else pvDt.textContent = '—';
+            } else pvDt.textContent = '—';
+            const n = seats && parseInt(seats.value, 10);
+            pvSeats.textContent = (n > 0 ? n + ' place' + (n > 1 ? 's' : '') : '—');
+            if (price && price.value && String(price.value).trim() !== '') {
+                pvPrice.textContent = 'Prix : ' + price.value + ' TND / place';
+            } else {
+                pvPrice.textContent = 'Prix : gratuit';
+            }
+            if (desc && desc.value.trim()) {
+                pvDesc.style.display = 'block';
+                pvDesc.textContent = desc.value.trim();
+            } else {
+                pvDesc.style.display = 'none';
+                pvDesc.textContent = '';
+            }
+        }
+        ['input', 'change'].forEach(ev => {
+            [dep, dest, dt, seats, price, desc].forEach(el => { if (el) el.addEventListener(ev, upd); });
+        });
+        upd();
+    })();
+    </script>
+{% endblock %}

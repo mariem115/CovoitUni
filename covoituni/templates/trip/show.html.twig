@@ -1,0 +1,160 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ trip.departure }} → {{ trip.destination }} — {{ parent() }}{% endblock %}
+
+{% block body %}
+{% set driver = trip.driver %}
+{% set fn = driver.firstName|default('') %}
+{% set ln = driver.lastName|default('') %}
+{% set initials = (fn|slice(0, 1) ~ ln|slice(0, 1))|upper %}
+{% if not initials %}{% set initials = driver.userIdentifier|slice(0, 2)|upper %}{% endif %}
+{% set avgRating = driver.averageRating %}
+
+<div class="container py-4">
+    <a href="{{ path('app_trip_index') }}" class="btn btn-link text-decoration-none ps-0 mb-3"><i class="bi bi-arrow-left me-1"></i>Retour aux trajets</a>
+
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="h2 fw-bold mb-2 d-flex flex-wrap align-items-center gap-2">
+                <span>{{ trip.departure }}</span>
+                <i class="bi bi-arrow-right text-primary"></i>
+                <span>{{ trip.destination }}</span>
+            </h1>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-2">
+                    <i class="bi bi-calendar-event me-1"></i>{{ trip.departureDateTime|date('d/m/Y à H:i') }}
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-3 py-2">
+                    <i class="bi bi-people me-1"></i>{{ trip.seatsAvailable }} / {{ trip.seatsTotal }} places libres
+                </span>
+                {% if not trip.isActive %}
+                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2">Non publié</span>
+                {% endif %}
+            </div>
+        </div>
+        {% if is_granted('EDIT', trip) %}
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ path('app_trip_edit', { id: trip.id }) }}" class="btn btn-outline-primary btn-sm">Modifier</a>
+                <form method="post" action="{{ path('app_trip_delete', { id: trip.id }) }}" onsubmit="return confirm('Retirer ce trajet de la liste publique ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_trip_' ~ trip.id) }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Supprimer</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Détails</h2>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">Départ</dt>
+                        <dd class="col-sm-8">{{ trip.departure }}</dd>
+                        <dt class="col-sm-4 text-muted">Destination</dt>
+                        <dd class="col-sm-8">{{ trip.destination }}</dd>
+                        <dt class="col-sm-4 text-muted">Date et heure</dt>
+                        <dd class="col-sm-8">{{ trip.departureDateTime|date('d/m/Y à H:i') }}</dd>
+                        <dt class="col-sm-4 text-muted">Places</dt>
+                        <dd class="col-sm-8">{{ trip.seatsAvailable }} disponible(s) sur {{ trip.seatsTotal }}</dd>
+                        <dt class="col-sm-4 text-muted">Prix</dt>
+                        <dd class="col-sm-8">
+                            {% if trip.pricePerSeat is not null and trip.pricePerSeat != '' %}
+                                <strong class="text-primary">{{ trip.pricePerSeat|number_format(2, ',', ' ') }} TND</strong> par place
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success border">Gratuit</span>
+                            {% endif %}
+                        </dd>
+                        {% if trip.description %}
+                            <dt class="col-sm-4 text-muted">Infos</dt>
+                            <dd class="col-sm-8 mb-0" style="white-space: pre-wrap;">{{ trip.description }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            {% if passengers is not empty %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Passagers</h2>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead><tr><th>Passager</th><th>Places</th><th>Statut</th></tr></thead>
+                                <tbody>
+                                    {% for r in passengers %}
+                                        <tr>
+                                            <td>{{ r.passenger.fullName ? r.passenger.fullName : r.passenger.userIdentifier }}</td>
+                                            <td>{{ r.seatsBooked }}</td>
+                                            <td><span class="badge bg-light text-dark border">{{ r.status }}</span></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if similarTrips is not empty %}
+                <h2 class="h5 fw-bold mb-3">Trajets similaires</h2>
+                <div class="row g-3">
+                    {% for t in similarTrips %}
+                        <div class="col-md-6">
+                            {% include 'components/trip_card.html.twig' with { trip: t } only %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="sticky-lg-top" style="top: 5rem;">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body p-4">
+                        <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Conducteur</h2>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <span class="avatar-initials rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:3rem;height:3rem;font-size:1rem;">{{ initials }}</span>
+                            <div>
+                                <div class="fw-semibold">{{ driver.fullName ? driver.fullName : driver.userIdentifier }}</div>
+                                <div class="small text-muted" aria-label="Note moyenne">
+                                    {% for i in 1..5 %}
+                                        <i class="bi bi-star{{ i <= avgRating ? '-fill' : '' }} text-warning"></i>
+                                    {% endfor %}
+                                    <span class="ms-1">({{ avgRating|number_format(1, ',', ' ') }}/5)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="mailto:{{ driver.userIdentifier }}" class="btn btn-outline-primary w-100"><i class="bi bi-envelope me-2"></i>Contacter</a>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Réservation</h2>
+                        {% if userReservation %}
+                            <p class="small mb-2">Vous avez une réservation sur ce trajet.</p>
+                            <p class="mb-0"><span class="badge bg-primary-subtle text-primary border">{{ userReservation.status }}</span> · {{ userReservation.seatsBooked }} place(s)</p>
+                        {% elseif canBook %}
+                            <form method="post" action="{{ path('app_trip_reserve', { id: trip.id }) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('reserve_trip_' ~ trip.id) }}">
+                                <label class="form-label small">Nombre de places</label>
+                                <select name="seats" class="form-select mb-3">
+                                    {% for i in 1..trip.seatsAvailable %}
+                                        <option value="{{ i }}">{{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary w-100">Réserver</button>
+                            </form>
+                        {% elseif not app.user %}
+                            <p class="small text-muted mb-3">Connectez-vous pour réserver une place.</p>
+                            <a href="{{ path('app_login') }}" class="btn btn-primary w-100">Connexion</a>
+                        {% else %}
+                            <p class="small text-muted mb-0">Vous ne pouvez pas réserver ce trajet (conducteur, plus de places, ou trajet indisponible).</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

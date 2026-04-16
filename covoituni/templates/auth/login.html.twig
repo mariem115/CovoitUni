@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion — {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center p-4">
+    <div class="w-100" style="max-width: 420px;">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4 p-md-5">
+                <h1 class="h4 fw-bold text-center mb-4">Connexion</h1>
+
+                {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error.message }}
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{{ path('app_login') }}" novalidate>
+                    <div class="mb-3">
+                        <label for="inputEmail" class="form-label">Adresse e-mail</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                            <input type="email" name="_username" id="inputEmail" class="form-control" value="{{ last_username }}" autocomplete="email" required autofocus>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inputPassword" class="form-label">Mot de passe</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <input type="password" name="_password" id="inputPassword" class="form-control" autocomplete="current-password" required>
+                        </div>
+                    </div>
+                    <div class="mb-4 form-check">
+                        <input type="checkbox" name="_remember_me" id="remember_me" class="form-check-input" value="1">
+                        <label class="form-check-label" for="remember_me">Se souvenir de moi</label>
+                    </div>
+
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                    <button type="submit" class="btn btn-primary w-100 py-2">Se connecter</button>
+                </form>
+
+                <p class="text-center text-muted small mt-4 mb-0">
+                    Pas encore de compte ?
+                    <a href="{{ path('app_register') }}">Créer un compte</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
