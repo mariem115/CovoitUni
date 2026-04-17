@@ -2,6 +2,11 @@
 
 {% block title %}{{ trip.departure }} → {{ trip.destination }} — {{ parent() }}{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+{% endblock %}
+
 {% block body %}
 {% set driver = trip.driver %}
 {% set fn = driver.firstName|default('') %}
@@ -15,11 +20,12 @@
 
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
         <div>
-            <h1 class="h2 fw-bold mb-2 d-flex flex-wrap align-items-center gap-2">
-                <span>{{ trip.departure }}</span>
-                <i class="bi bi-arrow-right text-primary"></i>
-                <span>{{ trip.destination }}</span>
+            <h1 class="trip-route mb-2">
+                <span class="trip-route__from">{{ trip.departure }}</span>
+                <i class="bi bi-arrow-right text-primary flex-shrink-0"></i>
+                <span class="trip-route__to">{{ trip.destination }}</span>
             </h1>
+            <p class="small text-muted mb-2"><i class="bi bi-clock me-1"></i>{{ tripTimingLabel }}</p>
             <div class="d-flex flex-wrap gap-2">
                 <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-2">
                     <i class="bi bi-calendar-event me-1"></i>{{ trip.departureDateTime|date('d/m/Y à H:i') }}
@@ -35,8 +41,9 @@
         {% if is_granted('EDIT', trip) %}
             <div class="d-flex flex-wrap gap-2">
                 <a href="{{ path('app_trip_edit', { id: trip.id }) }}" class="btn btn-outline-primary btn-sm">Modifier</a>
+                <a href="{{ path('app_trip_passengers', { tripId: trip.id }) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-people me-1"></i>Passagers</a>
                 <form method="post" action="{{ path('app_trip_delete', { id: trip.id }) }}" onsubmit="return confirm('Retirer ce trajet de la liste publique ?');">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete_trip_' ~ trip.id) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ trip.id) }}">
                     <button type="submit" class="btn btn-outline-danger btn-sm">Supprimer</button>
                 </form>
             </div>
@@ -45,6 +52,19 @@
 
     <div class="row g-4">
         <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Parcours sur la carte</h2>
+                    <div
+                        id="trip-map"
+                        class="leaflet-trip-map mb-0"
+                        style="height:250px;border-radius:12px"
+                        data-departure="{{ trip.departure|e('html_attr') }}"
+                        data-destination="{{ trip.destination|e('html_attr') }}"
+                    ></div>
+                </div>
+            </div>
+
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body p-4">
                     <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Détails</h2>
@@ -73,24 +93,14 @@
                 </div>
             </div>
 
-            {% if passengers is not empty %}
+            {% if is_granted('EDIT', trip) %}
                 <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body p-4">
-                        <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Passagers</h2>
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead><tr><th>Passager</th><th>Places</th><th>Statut</th></tr></thead>
-                                <tbody>
-                                    {% for r in passengers %}
-                                        <tr>
-                                            <td>{{ r.passenger.fullName ? r.passenger.fullName : r.passenger.userIdentifier }}</td>
-                                            <td>{{ r.seatsBooked }}</td>
-                                            <td><span class="badge bg-light text-dark border">{{ r.status }}</span></td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                    <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div>
+                            <h2 class="h6 text-uppercase text-muted fw-semibold mb-1">Réservations</h2>
+                            <p class="small text-muted mb-0">Confirmez ou refusez les demandes depuis la page dédiée.</p>
                         </div>
+                        <a href="{{ path('app_trip_passengers', { tripId: trip.id }) }}" class="btn btn-primary btn-sm">Gérer les passagers</a>
                     </div>
                 </div>
             {% endif %}
@@ -116,9 +126,9 @@
                             <span class="avatar-initials rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:3rem;height:3rem;font-size:1rem;">{{ initials }}</span>
                             <div>
                                 <div class="fw-semibold">{{ driver.fullName ? driver.fullName : driver.userIdentifier }}</div>
-                                <div class="small text-muted" aria-label="Note moyenne">
+                                <div class="small text-muted star-rating" aria-label="Note moyenne">
                                     {% for i in 1..5 %}
-                                        <i class="bi bi-star{{ i <= avgRating ? '-fill' : '' }} text-warning"></i>
+                                        <i class="bi bi-star{{ i <= avgRating ? '-fill' : '' }}"></i>
                                     {% endfor %}
                                     <span class="ms-1">({{ avgRating|number_format(1, ',', ' ') }}/5)</span>
                                 </div>
@@ -132,24 +142,30 @@
                     <div class="card-body p-4">
                         <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Réservation</h2>
                         {% if userReservation %}
+                            {% set st = userReservation.status %}
                             <p class="small mb-2">Vous avez une réservation sur ce trajet.</p>
-                            <p class="mb-0"><span class="badge bg-primary-subtle text-primary border">{{ userReservation.status }}</span> · {{ userReservation.seatsBooked }} place(s)</p>
-                        {% elseif canBook %}
-                            <form method="post" action="{{ path('app_trip_reserve', { id: trip.id }) }}">
-                                <input type="hidden" name="_token" value="{{ csrf_token('reserve_trip_' ~ trip.id) }}">
-                                <label class="form-label small">Nombre de places</label>
-                                <select name="seats" class="form-select mb-3">
-                                    {% for i in 1..trip.seatsAvailable %}
-                                        <option value="{{ i }}">{{ i }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit" class="btn btn-primary w-100">Réserver</button>
+                            <p class="mb-0">
+                                <span class="status-badge status-badge--{{ st == 'pending' ? 'pending' : (st == 'confirmed' ? 'confirmed' : 'cancelled') }}">{{ st }}</span>
+                                · {{ userReservation.seatsBooked }} place(s)
+                            </p>
+                        {% elseif bookInfo.canBook %}
+                            <form method="post" action="{{ path('app_reservation_book', { tripId: trip.id }) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('book_trip_' ~ trip.id) }}">
+                                <button type="submit" class="btn btn-primary w-100">Réserver (1 place)</button>
                             </form>
+                            <p class="small text-muted mt-2 mb-0"><a href="{{ path('app_reservation_my') }}">Voir mes réservations</a></p>
                         {% elseif not app.user %}
                             <p class="small text-muted mb-3">Connectez-vous pour réserver une place.</p>
                             <a href="{{ path('app_login') }}" class="btn btn-primary w-100">Connexion</a>
                         {% else %}
-                            <p class="small text-muted mb-0">Vous ne pouvez pas réserver ce trajet (conducteur, plus de places, ou trajet indisponible).</p>
+                            {% set reason = bookInfo.reason %}
+                            <p class="small text-muted mb-0">
+                                {% if reason == 'is_driver' %}Vous êtes le conducteur de ce trajet.
+                                {% elseif reason == 'no_seats' %}Plus de places disponibles.
+                                {% elseif reason == 'already_booked' %}Vous avez déjà une réservation pour ce trajet.
+                                {% elseif reason == 'trip_past' %}Ce trajet n’est plus disponible (date passée ou trajet retiré).
+                                {% else %}Réservation impossible pour ce trajet.{% endif %}
+                            </p>
                         {% endif %}
                     </div>
                 </div>
@@ -157,4 +173,42 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        (function () {
+            var el = document.getElementById('trip-map');
+            if (!el || typeof L === 'undefined') return;
+
+            var dep = el.dataset.departure || '';
+            var dest = el.dataset.destination || '';
+            if (!dep || !dest) return;
+
+            var map = L.map(el, { scrollWheelZoom: false }).setView([34.0, 9.5], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            function nominatim(q) {
+                var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q + ', Tunisia');
+                return fetch(url, { headers: { 'Accept-Language': 'fr' } }).then(function (r) { return r.json(); });
+            }
+
+            Promise.all([nominatim(dep), nominatim(dest)]).then(function (results) {
+                var a = results[0][0];
+                var b = results[1][0];
+                if (!a || !b) return;
+                var latlngA = [parseFloat(a.lat), parseFloat(a.lon)];
+                var latlngB = [parseFloat(b.lat), parseFloat(b.lon)];
+                var mA = L.marker(latlngA).addTo(map).bindPopup(dep);
+                var mB = L.marker(latlngB).addTo(map).bindPopup(dest);
+                L.polyline([latlngA, latlngB], { color: '#4F46E5', weight: 4, opacity: 0.85 }).addTo(map);
+                map.fitBounds(L.latLngBounds(latlngA, latlngB), { padding: [36, 36] });
+            }).catch(function () {});
+        })();
+    </script>
 {% endblock %}

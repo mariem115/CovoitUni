@@ -30,12 +30,14 @@ security:
 
     access_control:
         - { path: ^/admin, roles: ROLE_ADMIN }
-        - { path: ^/profil/mes-trajets, roles: ROLE_USER }
         - { path: ^/trajets/nouveau, roles: ROLE_USER }
         - { path: ^/mes-trajets, roles: ROLE_USER }
+        - { path: ^/mes-reservations, roles: ROLE_USER }
         - { path: ^/reserver, roles: ROLE_USER }
-        - { path: ^/profil/edit, roles: ROLE_USER }
-        - { path: ^/notation, roles: ROLE_USER }
+        - { path: ^/reservation/, roles: ROLE_USER }
+        - { path: ^/profil/modifier, roles: ROLE_USER }
+        - { path: ^/mon-profil, roles: ROLE_USER }
+        - { path: ^/noter, roles: ROLE_USER }
 
 when@test:
     security:

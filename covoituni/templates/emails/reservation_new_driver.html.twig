@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Nouvelle réservation</title>
+</head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #0f172a;">
+    <p>Bonjour,</p>
+    <p><strong>{{ passenger.fullName|default(passenger.userIdentifier) }}</strong> souhaite rejoindre votre trajet :</p>
+    <ul>
+        <li><strong>{{ trip.departure }}</strong> → <strong>{{ trip.destination }}</strong></li>
+        <li>Date : {{ trip.departureDateTime|date('d/m/Y à H:i') }}</li>
+        <li>Places demandées : {{ reservation.seatsBooked }}</li>
+    </ul>
+    {% if passenger.university %}
+        <p>Université : {{ passenger.university }}</p>
+    {% endif %}
+    <p>
+        <a href="{{ manageUrl }}" style="display:inline-block;padding:0.6rem 1.2rem;background:#4F46E5;color:#fff;text-decoration:none;border-radius:6px;">Gérer les passagers</a>
+    </p>
+    <p class="small" style="color:#64748b;">Connectez-vous à CovoitUni pour confirmer ou refuser la demande depuis la page des passagers.</p>
+    <p>— CovoitUni</p>
+</body>
+</html>

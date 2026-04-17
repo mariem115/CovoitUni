@@ -5,7 +5,7 @@
 {% block stylesheets %}
     {{ parent() }}
     <style>
-        .hero-covoit {
+        .hero-covoit.hero-gradient {
             background: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
             color: #fff;
             padding: 4rem 0 4.5rem;
@@ -38,7 +38,7 @@
 {% endblock %}
 
 {% block body %}
-<section class="hero-covoit">
+<section class="hero-covoit hero-gradient">
     <div class="container">
         <div class="row justify-content-center text-center mb-4">
             <div class="col-lg-9">

@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Passagers — {{ trip.departure }} → {{ trip.destination }} — {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <a href="{{ path('app_trip_show', { id: trip.id }) }}" class="btn btn-link text-decoration-none ps-0 mb-3"><i class="bi bi-arrow-left me-1"></i>Retour au trajet</a>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <h1 class="h4 fw-bold mb-2">{{ trip.departure }} <i class="bi bi-arrow-right text-primary"></i> {{ trip.destination }}</h1>
+            <p class="text-muted mb-0"><i class="bi bi-calendar-event me-1"></i>{{ trip.departureDateTime|date('d/m/Y à H:i') }}
+                · <i class="bi bi-people ms-2 me-1"></i>{{ trip.seatsAvailable }} / {{ trip.seatsTotal }} places libres</p>
+        </div>
+    </div>
+
+    <div class="alert alert-light border mb-4 mb-0">
+        <strong>Résumé :</strong>
+        <span class="badge bg-success ms-2">{{ summary.confirmed }} confirmée(s)</span>
+        <span class="badge bg-warning text-dark ms-1">{{ summary.pending }} en attente</span>
+        <span class="badge bg-secondary ms-1">{{ summary.cancelled }} annulée(s)</span>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Passager</th>
+                            <th>Université</th>
+                            <th>Places</th>
+                            <th>Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reservations %}
+                            {% set p = r.passenger %}
+                            {% set pfn = p.firstName|default('') %}
+                            {% set pln = p.lastName|default('') %}
+                            {% set pini = (pfn|slice(0, 1) ~ pln|slice(0, 1))|upper %}
+                            {% if not pini %}{% set pini = p.userIdentifier|slice(0, 2)|upper %}{% endif %}
+                            {% set st = r.status %}
+                            {% set badge = st == 'pending' ? 'warning text-dark' : (st == 'confirmed' ? 'success' : 'secondary') %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="avatar-initials rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:2.25rem;height:2.25rem;font-size:0.75rem;">{{ pini }}</span>
+                                        <span class="fw-medium">{{ p.fullName ? p.fullName : p.userIdentifier }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ p.university|default('—') }}</td>
+                                <td>{{ r.seatsBooked }}</td>
+                                <td><span class="badge bg-{{ badge }}">{{ st }}</span></td>
+                                <td class="text-end">
+                                    {% if st == 'pending' %}
+                                        <form method="post" action="{{ path('app_reservation_confirm', { id: r.id }) }}" class="d-inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('confirm' ~ r.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-success">Confirmer</button>
+                                        </form>
+                                        <form method="post" action="{{ path('app_reservation_reject', { id: r.id }) }}" class="d-inline" onsubmit="return confirm('Refuser cette demande ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('reject' ~ r.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Refuser</button>
+                                        </form>
+                                    {% elseif st == 'confirmed' %}
+                                        <form method="post" action="{{ path('app_reservation_reject', { id: r.id }) }}" class="d-inline" onsubmit="return confirm('Annuler cette réservation confirmée et libérer la place ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('reject' ~ r.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Annuler</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-muted small">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">Aucune réservation pour ce trajet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

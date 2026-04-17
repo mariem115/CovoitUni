@@ -1,0 +1,75 @@
+{% extends '@EasyAdmin/layout.html.twig' %}
+
+{% block content_title %}Dashboard{% endblock %}
+
+{% block main %}
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 ea-stat-card">
+                <div class="card-body">
+                    <div class="text-secondary small text-uppercase fw-semibold">Total users</div>
+                    <div class="display-6 fw-bold text-primary">{{ stats.total_users }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 ea-stat-card">
+                <div class="card-body">
+                    <div class="text-secondary small text-uppercase fw-semibold">Active trips</div>
+                    <div class="display-6 fw-bold text-primary">{{ stats.active_trips }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 ea-stat-card">
+                <div class="card-body">
+                    <div class="text-secondary small text-uppercase fw-semibold">Pending reservations</div>
+                    <div class="display-6 fw-bold text-primary">{{ stats.pending_reservations }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 ea-stat-card">
+                <div class="card-body">
+                    <div class="text-secondary small text-uppercase fw-semibold">Avg. platform rating</div>
+                    <div class="display-6 fw-bold text-primary">
+                        {% if stats.avg_rating is null %}
+                            —
+                        {% else %}
+                            {{ stats.avg_rating }} / 5
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 pb-0">
+            <h2 class="h5 mb-0 fw-semibold">Recent activity</h2>
+            <p class="text-secondary small mb-0">Last 5 reservations</p>
+        </div>
+        <div class="card-body pt-2">
+            {% if recent_reservations is empty %}
+                <p class="text-secondary mb-0">No reservations yet.</p>
+            {% else %}
+                <ul class="list-group list-group-flush">
+                    {% for r in recent_reservations %}
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <div>
+                                <span class="fw-semibold">#{{ r.id }}</span>
+                                <span class="text-secondary">—</span>
+                                {{ r.passenger.fullName ?? r.passenger.email }}
+                                <span class="text-secondary small">on trip {{ r.trip.departure }} → {{ r.trip.destination }}</span>
+                            </div>
+                            <div class="text-end small">
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ r.status }}</span>
+                                <div class="text-secondary">{{ r.createdAt|date('Y-m-d H:i') }}</div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le profil — {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <h1 class="h3 fw-bold mb-4">Modifier le profil</h1>
+
+    {{ form_start(form, { attr: { class: 'needs-validation', novalidate: 'novalidate' } }) }}
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="form-floating mb-3">
+                        {{ form_widget(form.firstName, { attr: { class: 'form-control', placeholder: ' ' } }) }}
+                        {{ form_label(form.firstName) }}
+                        {{ form_errors(form.firstName) }}
+                    </div>
+                    <div class="form-floating mb-3">
+                        {{ form_widget(form.lastName, { attr: { class: 'form-control', placeholder: ' ' } }) }}
+                        {{ form_label(form.lastName) }}
+                        {{ form_errors(form.lastName) }}
+                    </div>
+                    <div class="form-floating mb-3">
+                        {{ form_widget(form.phone, { attr: { class: 'form-control', placeholder: ' ' } }) }}
+                        {{ form_label(form.phone) }}
+                        {{ form_errors(form.phone) }}
+                    </div>
+                    <div class="form-floating mb-3">
+                        {{ form_widget(form.university, { attr: { class: 'form-control', placeholder: ' ' } }) }}
+                        {{ form_label(form.university) }}
+                        {{ form_errors(form.university) }}
+                    </div>
+                    <div class="form-floating mb-0">
+                        {{ form_widget(form.bio, { attr: { class: 'form-control', placeholder: ' ', style: 'height:8rem' } }) }}
+                        {{ form_label(form.bio) }}
+                        {{ form_errors(form.bio) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Photo de profil</h2>
+                    <div class="text-center mb-3">
+                        <div id="photo-preview-wrap" class="d-inline-block position-relative">
+                            {% if user.profilePhoto %}
+                                <img src="{{ asset('images/uploads/' ~ user.profilePhoto) }}" alt="" id="photo-preview" class="rounded-circle shadow object-fit-cover" style="width:10rem;height:10rem;">
+                            {% else %}
+                                {% set fn = user.firstName|default('') %}
+                                {% set ln = user.lastName|default('') %}
+                                {% set initials = (fn|slice(0, 1) ~ ln|slice(0, 1))|upper %}
+                                {% if not initials %}{% set initials = user.userIdentifier|slice(0, 2)|upper %}{% endif %}
+                                <span id="photo-preview-fallback" class="avatar-initials rounded-circle d-inline-flex align-items-center justify-content-center" style="width:10rem;height:10rem;font-size:2rem;">{{ initials }}</span>
+                                <img src="" alt="" id="photo-preview" class="rounded-circle shadow object-fit-cover d-none" style="width:10rem;height:10rem;">
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        {{ form_label(form.profilePhoto, null, { label_attr: { class: 'form-label' } }) }}
+                        {{ form_widget(form.profilePhoto, { attr: { class: 'form-control', id: 'profile_photo_input' } }) }}
+                        {{ form_errors(form.profilePhoto) }}
+                    </div>
+                    <p class="small text-muted mb-0">JPEG, PNG ou WebP —2 Mo max.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <a href="{{ path('app_profile_my') }}" class="btn btn-outline-secondary">Annuler</a>
+    </div>
+
+    {{ form_end(form) }}
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (function () {
+            var input = document.getElementById('profile_photo_input');
+            if (!input) return;
+            var preview = document.getElementById('photo-preview');
+            var fallback = document.getElementById('photo-preview-fallback');
+            input.addEventListener('change', function () {
+                var f = input.files && input.files[0];
+                if (!f || !preview) return;
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('d-none');
+                    if (fallback) fallback.classList.add('d-none');
+                };
+                reader.readAsDataURL(f);
+            });
+        })();
+    </script>
+{% endblock %}

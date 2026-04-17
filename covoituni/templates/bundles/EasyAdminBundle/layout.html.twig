@@ -1,0 +1,20 @@
+{% extends '@!EasyAdmin/layout.html.twig' %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ asset('css/admin-theme.css') }}">
+{% endblock %}
+
+{% block responsive_header_logo %}
+    <a class="responsive-logo" title="CovoitUni" href="{{ path(ea.dashboardRouteName) }}">
+        <span class="ea-admin-brand">CovoitUni &#128663;</span>
+    </a>
+{% endblock %}
+
+{% block header_logo %}
+    <a class="logo" title="CovoitUni" href="{{ path(ea.dashboardRouteName) }}">
+        <span class="logo-custom"><span class="ea-admin-brand">CovoitUni &#128663;</span></span>
+        <span class="logo-compact"><i class="bi bi-car-front-fill" aria-hidden="true"></i></span>
+    </a>
+{% endblock %}

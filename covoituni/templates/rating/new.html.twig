@@ -1,0 +1,97 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form _self %}
+
+{# Star radios: high-to-low order + row-reverse for CSS ~ hover / checked #}
+{% block rating_score_row %}
+    <div class="mb-4">
+        <span class="form-label d-block text-center mb-2">{{ form.vars.label }}</span>
+        <div class="cu-star-rating-inputs" role="radiogroup" aria-label="{{ form.vars.label }}">
+            {% for child in form|reverse %}
+                {{ form_widget(child, { attr: (child.vars.attr|default({}))|merge({ class: 'visually-hidden' }) }) }}
+                <label for="{{ child.vars.id }}" class="cu-star-rating-label"><span class="visually-hidden">{{ child.vars.label }}</span>★</label>
+            {% endfor %}
+        </div>
+        {{ form_errors(form) }}
+    </div>
+{% endblock %}
+
+{% block rating_comment_row %}
+    <div class="form-floating mb-4">
+        {{ form_widget(form.comment, { attr: (form.comment.vars.attr|default({}))|merge({ class: 'form-control', placeholder: ' ', style: 'height:8rem' }) }) }}
+        {{ form_label(form.comment) }}
+        {{ form_errors(form.comment) }}
+    </div>
+{% endblock %}
+
+{% block title %}Noter le conducteur — {{ parent() }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /*
+         * Radios + labels interleaved in order value 5 → 1; flex row-reverse shows 1★ on the left.
+         * ~ sibling combinator lights all lower values when one input is checked or a label is hovered.
+         */
+        .cu-star-rating-inputs {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: center;
+            gap: 0.15rem;
+        }
+        .cu-star-rating-label {
+            cursor: pointer;
+            font-size: 2.75rem;
+            line-height: 1;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 0 0.08rem;
+            transition: color 0.15s ease, transform 0.12s ease;
+            user-select: none;
+        }
+        .cu-star-rating-label:hover {
+            transform: scale(1.06);
+        }
+        .cu-star-rating-inputs input:checked ~ .cu-star-rating-label,
+        .cu-star-rating-label:hover,
+        .cu-star-rating-label:hover ~ .cu-star-rating-label {
+            color: #f59e0b;
+        }
+        .cu-star-rating-inputs input:focus-visible + .cu-star-rating-label {
+            outline: 2px solid var(--bs-primary);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <h1 class="h4 fw-bold text-center mb-2">Votre avis</h1>
+                    {% set tr = reservation.trip %}
+                    <p class="text-muted text-center small mb-4">
+                        Trajet : <strong>{{ tr.departure }}</strong> → <strong>{{ tr.destination }}</strong><br>
+                        {{ tr.departureDateTime|date('d/m/Y à H:i') }}
+                    </p>
+
+                    {{ form_start(form) }}
+                    {{ form_row(form.score) }}
+                    {{ form_row(form.comment) }}
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Envoyer</button>
+                    </div>
+                    {{ form_end(form) }}
+
+                    <p class="text-center mt-3 mb-0">
+                        <a href="{{ path('app_reservation_my') }}" class="small">Retour à mes réservations</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

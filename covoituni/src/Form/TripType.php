@@ -11,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Range;
@@ -25,7 +26,7 @@ class TripType extends AbstractType
                 'attr' => ['placeholder' => 'Ex: Tunis'],
                 'constraints' => [
                     new NotBlank(message: 'Indiquez la ville de départ.'),
-                    new Length(max: 200),
+                    new Length(min: 3, max: 200),
                 ],
             ])
             ->add('destination', TextType::class, [
@@ -33,7 +34,7 @@ class TripType extends AbstractType
                 'attr' => ['placeholder' => 'Ex: Sousse'],
                 'constraints' => [
                     new NotBlank(message: 'Indiquez la destination.'),
-                    new Length(max: 200),
+                    new Length(min: 3, max: 200),
                 ],
             ])
             ->add('departureDateTime', DateTimeType::class, [
@@ -43,6 +44,11 @@ class TripType extends AbstractType
                 'html5' => true,
                 'constraints' => [
                     new NotBlank(message: 'Choisissez la date et l’heure.'),
+                    new GreaterThan(
+                        value: 'today',
+                        message: 'La date du trajet doit être après aujourd’hui.',
+                        groups: ['trip_create'],
+                    ),
                 ],
             ])
             ->add('seatsTotal', IntegerType::class, [

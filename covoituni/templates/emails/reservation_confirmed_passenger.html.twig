@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Réservation confirmée</title>
+</head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #0f172a;">
+    <p>Bonjour {{ passenger.fullName|default(passenger.userIdentifier) }},</p>
+    <p>Votre réservation a été <strong>confirmée</strong> par le conducteur.</p>
+    <ul>
+        <li><strong>{{ trip.departure }}</strong> → <strong>{{ trip.destination }}</strong></li>
+        <li>Date : {{ trip.departureDateTime|date('d/m/Y à H:i') }}</li>
+        <li>Conducteur : {{ driver.fullName|default(driver.userIdentifier) }}</li>
+        <li>Places : {{ reservation.seatsBooked }}</li>
+    </ul>
+    <p>
+        <a href="{{ myReservationsUrl }}" style="display:inline-block;padding:0.6rem 1.2rem;background:#4F46E5;color:#fff;text-decoration:none;border-radius:6px;">Voir mes réservations</a>
+    </p>
+    <p>— CovoitUni</p>
+</body>
+</html>

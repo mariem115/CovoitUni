@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Annulation</title>
+</head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #0f172a;">
+    <p>Bonjour,</p>
+    {% if cancelledBy == 'passenger' %}
+        <p>Le passager <strong>{{ otherParty.fullName|default(otherParty.userIdentifier) }}</strong> a annulé sa réservation pour le trajet suivant :</p>
+    {% else %}
+        <p>Le conducteur a refusé ou annulé la réservation pour le trajet suivant :</p>
+    {% endif %}
+    <ul>
+        <li><strong>{{ trip.departure }}</strong> → <strong>{{ trip.destination }}</strong></li>
+        <li>Date : {{ trip.departureDateTime|date('d/m/Y à H:i') }}</li>
+    </ul>
+    <p>— CovoitUni</p>
+</body>
+</html>

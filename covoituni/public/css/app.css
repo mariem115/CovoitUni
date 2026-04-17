@@ -1,0 +1,234 @@
+/* --- Design tokens --- */
+:root {
+    --cu-primary: #4f46e5;
+    --cu-accent: #06b6d4;
+    --cu-amber: #f59e0b;
+    --cu-gray-star: #e5e7eb;
+    --bs-primary: #4f46e5;
+    --bs-primary-rgb: 79, 70, 229;
+}
+
+/* --- Page load --- */
+@keyframes cu-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+body.cu-page-fade {
+    animation: cu-fade-in 0.35s ease-out both;
+}
+
+/* --- Navbar glass --- */
+.navbar.navbar-glass {
+    background: rgba(255, 255, 255, 0.82) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.navbar.navbar-glass.sticky-top {
+    z-index: 50;
+}
+
+/* --- Hero gradient utility --- */
+.hero-gradient {
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    color: #fff;
+}
+
+/* --- Trip cards (premium) --- */
+.card.trip-card-premium {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card.trip-card-premium:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.12);
+}
+
+/* Legacy lift helper kept in sync */
+.card.card-hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card.card-hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.12) !important;
+}
+
+/* --- Avatar --- */
+.avatar-initials {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--cu-primary), var(--cu-accent));
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Star rating (display) --- */
+.star-rating .bi-star-fill {
+    color: var(--cu-amber);
+}
+
+.star-rating .bi-star,
+.star-rating .bi-star-half {
+    color: var(--cu-gray-star);
+}
+
+.star-rating .bi-star-fill.text-warning,
+.star-rating .bi-star-half.text-warning {
+    color: var(--cu-amber) !important;
+}
+
+.cu-star-display .bi-star {
+    color: var(--cu-gray-star);
+}
+
+/* --- Status badges --- */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    text-transform: lowercase;
+}
+
+.status-badge--pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #b45309;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.status-badge--confirmed {
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.status-badge--cancelled {
+    background: rgba(107, 114, 128, 0.12);
+    color: #4b5563;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* --- Route title --- */
+.trip-route {
+    font-size: clamp(1.15rem, 2.5vw, 1.75rem);
+    font-weight: 700;
+    line-height: 1.25;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.trip-route__from,
+.trip-route__to {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- Skeleton --- */
+@keyframes cu-shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton-card {
+    border-radius: 16px;
+    min-height: 220px;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: cu-shimmer 1.2s ease-in-out infinite;
+}
+
+/* --- Layout / type --- */
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.btn-primary {
+    --bs-btn-bg: #4f46e5;
+    --bs-btn-border-color: #4f46e5;
+    --bs-btn-hover-bg: #4338ca;
+    --bs-btn-hover-border-color: #4338ca;
+    --bs-btn-active-bg: #3730a3;
+    --bs-btn-active-border-color: #3730a3;
+    --bs-btn-focus-shadow-rgb: 79, 70, 229;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: #4f46e5;
+    --bs-btn-border-color: #4f46e5;
+    --bs-btn-hover-bg: #4f46e5;
+    --bs-btn-hover-border-color: #4f46e5;
+}
+
+.navbar-brand-covoit {
+    font-weight: 600;
+    color: #0f172a !important;
+}
+
+.navbar-brand-covoit .brand-emoji {
+    font-style: normal;
+}
+
+.nav-link-covoit {
+    font-weight: 500;
+    color: #475569 !important;
+}
+
+.nav-link-covoit:hover,
+.nav-link-covoit.active {
+    color: var(--cu-primary) !important;
+}
+
+footer.footer-covoit {
+    flex-shrink: 0;
+    background: #0f172a;
+    color: #94a3b8;
+}
+
+footer.footer-covoit a {
+    color: #cbd5e1;
+    text-decoration: none;
+}
+
+footer.footer-covoit a:hover {
+    color: #fff;
+}
+
+/* Leaflet container polish */
+.leaflet-trip-map {
+    z-index: 1;
+    border-radius: 12px;
+    overflow: hidden;
+}

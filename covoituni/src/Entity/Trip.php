@@ -214,4 +214,19 @@ class Trip
 
         return $this;
     }
+
+    /**
+     * Places réservées (demandes en attente ou confirmées).
+     */
+    public function getBookedPassengerSeats(): int
+    {
+        $n = 0;
+        foreach ($this->reservations as $r) {
+            if (\in_array($r->getStatus(), ['pending', 'confirmed'], true)) {
+                $n += $r->getSeatsBooked();
+            }
+        }
+
+        return $n;
+    }
 }

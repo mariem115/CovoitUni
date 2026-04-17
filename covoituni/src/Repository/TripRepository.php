@@ -45,6 +45,7 @@ class TripRepository extends ServiceEntityRepository
     public function createActiveTripsQueryBuilder(): QueryBuilder
     {
         return $this->createQueryBuilder('t')
+            ->innerJoin('t.driver', 'd')->addSelect('d')
             ->andWhere('t.isActive = :active')
             ->setParameter('active', true)
             ->orderBy('t.departureDateTime', 'ASC');
@@ -63,6 +64,7 @@ class TripRepository extends ServiceEntityRepository
     public function createSearchTripsQueryBuilder(string $departure, string $destination, ?\DateTimeImmutable $date, int $minSeats = 1): QueryBuilder
     {
         $qb = $this->createQueryBuilder('t')
+            ->innerJoin('t.driver', 'd')->addSelect('d')
             ->andWhere('t.isActive = :active')
             ->setParameter('active', true)
             ->andWhere('t.seatsAvailable >= :minSeats')
@@ -105,6 +107,35 @@ class TripRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @return list<Trip>
+     */
+    public function findByDriverWithReservations(User $driver): array
+    {
+        return $this->createQueryBuilder('t')
+            ->leftJoin('t.reservations', 'r')->addSelect('r')
+            ->andWhere('t.driver = :driver')
+            ->setParameter('driver', $driver)
+            ->orderBy('t.departureDateTime', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return list<Trip>
+     */
+    public function findActiveByDriver(User $driver): array
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.driver = :driver')
+            ->andWhere('t.isActive = :active')
+            ->setParameter('driver', $driver)
+            ->setParameter('active', true)
+            ->orderBy('t.departureDateTime', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function countActiveTrips(): int
     {
         return (int) $this->createQueryBuilder('t')
@@ -128,6 +159,29 @@ class TripRepository extends ServiceEntityRepository
             ->andWhere('t.destination = :dest OR t.departure = :dep')
             ->setParameter('dest', $trip->getDestination())
             ->setParameter('dep', $trip->getDeparture())
+            ->orderBy('t.departureDateTime', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Active trips with the same destination (excluding this trip), future departures only.
+     *
+     * @return list<Trip>
+     */
+    public function findSimilarByDestination(Trip $trip, int $limit): array
+    {
+        return $this->createQueryBuilder('t')
+            ->innerJoin('t.driver', 'd')->addSelect('d')
+            ->andWhere('t.isActive = :active')
+            ->setParameter('active', true)
+            ->andWhere('t.id != :id')
+            ->setParameter('id', $trip->getId())
+            ->andWhere('t.destination = :dest')
+            ->setParameter('dest', $trip->getDestination())
+            ->andWhere('t.departureDateTime >= :now')
+            ->setParameter('now', new \DateTimeImmutable())
             ->orderBy('t.departureDateTime', 'ASC')
             ->setMaxResults($limit)
             ->getQuery()

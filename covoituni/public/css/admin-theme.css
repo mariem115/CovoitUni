@@ -1,0 +1,30 @@
+/**
+ * Indigo accent for EasyAdmin (Bootstrap 5 + EA theme variables).
+ */
+body.ea {
+    --ea-color-primary: #4f46e5;
+    --ea-color-primary-hsl: 239 84% 67%;
+    --ea-btn-primary-bg: #4f46e5;
+    --ea-btn-primary-border-color: #4338ca;
+    --ea-btn-primary-hover-bg: #4338ca;
+    --ea-btn-primary-hover-border-color: #3730a3;
+    --ea-link-color: #4f46e5;
+    --ea-link-hover-color: #3730a3;
+}
+
+body.ea .sidebar {
+    border-right: 1px solid rgba(79, 70, 229, 0.12);
+}
+
+body.ea .main-header .navbar {
+    background: linear-gradient(135deg, #312e81 0%, #4f46e5 55%, #6366f1 100%);
+}
+
+body.ea .ea-admin-brand {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+body.ea .ea-stat-card .text-primary {
+    color: #4f46e5 !important;
+}

@@ -44,4 +44,19 @@ class ReservationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return list<Reservation>
+     */
+    public function findForPassengerOrdered(User $user): array
+    {
+        return $this->createQueryBuilder('r')
+            ->innerJoin('r.trip', 't')->addSelect('t')
+            ->innerJoin('t.driver', 'd')->addSelect('d')
+            ->andWhere('r.passenger = :user')
+            ->setParameter('user', $user)
+            ->orderBy('r.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }

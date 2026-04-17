@@ -1,0 +1,100 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes réservations — {{ parent() }}{% endblock %}
+
+{% macro reservation_card(r, now) %}
+    {% set trip = r.trip %}
+    {% set driver = trip.driver %}
+    {% set fn = driver.firstName|default('') %}
+    {% set ln = driver.lastName|default('') %}
+    {% set initials = (fn|slice(0, 1) ~ ln|slice(0, 1))|upper %}
+    {% if not initials %}{% set initials = driver.userIdentifier|slice(0, 2)|upper %}{% endif %}
+    {% set dep = trip.departureDateTime %}
+    {% set status = r.status %}
+    {% set badge_class = status == 'pending' ? 'warning text-dark' : (status == 'confirmed' ? 'success' : 'secondary') %}
+    {% set cancellable = status in ['pending', 'confirmed'] and dep >= now %}
+    {% set can_rate = status == 'confirmed' and not r.isRated and dep < now %}
+
+    <div class="card border-0 shadow-sm card-hover-lift mb-3">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                <div>
+                    <h2 class="h6 fw-bold mb-1">{{ trip.departure }} <i class="bi bi-arrow-right text-primary"></i> {{ trip.destination }}</h2>
+                    <p class="small text-muted mb-0"><i class="bi bi-calendar-event me-1"></i>{{ dep|date('d/m/Y à H:i') }}</p>
+                </div>
+                <span class="badge bg-{{ badge_class }}">{{ status }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="avatar-initials rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0">{{ initials }}</span>
+                <div>
+                    <div class="fw-semibold">{{ driver.fullName ? driver.fullName : driver.userIdentifier }}</div>
+                    {% if driver.university %}
+                        <div class="small text-muted">{{ driver.university }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                {% if cancellable %}
+                    <form method="post" action="{{ path('app_reservation_cancel', { id: r.id }) }}" onsubmit="return confirm('Annuler cette réservation ?');" class="d-inline">
+                        <input type="hidden" name="_token" value="{{ csrf_token('cancel' ~ r.id) }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Annuler</button>
+                    </form>
+                {% endif %}
+                {% if can_rate %}
+                    <a href="{{ path('app_rating_new', { reservationId: r.id }) }}" class="btn btn-outline-primary btn-sm">Noter le conducteur</a>
+                {% endif %}
+                <a href="{{ path('app_trip_show', { id: trip.id }) }}" class="btn btn-light border btn-sm">Voir le trajet</a>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{% import _self as r %}
+
+{% block body %}
+<div class="container py-4">
+    <h1 class="h3 fw-bold mb-4">Mes réservations</h1>
+
+    <ul class="nav nav-tabs mb-4" id="resTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-active" data-bs-toggle="tab" data-bs-target="#pane-active" type="button" role="tab">En cours</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-done" data-bs-toggle="tab" data-bs-target="#pane-done" type="button" role="tab">Terminées</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-cancel" data-bs-toggle="tab" data-bs-target="#pane-cancel" type="button" role="tab">Annulées</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="pane-active" role="tabpanel">
+            {% if activeReservations is empty %}
+                <p class="text-muted">Aucune réservation en cours.</p>
+            {% else %}
+                {% for res in activeReservations %}
+                    {{ r.reservation_card(res, now) }}
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="tab-pane fade" id="pane-done" role="tabpanel">
+            {% if completedReservations is empty %}
+                <p class="text-muted">Aucun trajet terminé pour l’instant.</p>
+            {% else %}
+                {% for res in completedReservations %}
+                    {{ r.reservation_card(res, now) }}
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="tab-pane fade" id="pane-cancel" role="tabpanel">
+            {% if cancelledReservations is empty %}
+                <p class="text-muted">Aucune réservation annulée.</p>
+            {% else %}
+                {% for res in cancelledReservations %}
+                    {{ r.reservation_card(res, now) }}
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

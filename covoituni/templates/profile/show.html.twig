@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ user.fullName|default(user.userIdentifier) }} — {{ parent() }}{% endblock %}
+
+{% macro review_stars(score) %}
+ {% for i in 1..5 %}
+        <i class="bi {{ i <= score ? 'bi-star-fill' : 'bi-star' }} text-warning" aria-hidden="true"></i>
+    {% endfor %}
+{% endmacro %}
+
+{% import _self as p %}
+
+{% block body %}
+<div class="container py-4">
+    <div class="card border-0 shadow-sm overflow-hidden mb-4">
+        <div class="card-body p-4 p-lg-5">
+            <div class="row g-4 align-items-center">
+                <div class="col-auto">
+                    {% if user.profilePhoto %}
+                        <img src="{{ asset('images/uploads/' ~ user.profilePhoto) }}" alt="" class="rounded-circle shadow" style="width:7rem;height:7rem;object-fit:cover;">
+                    {% else %}
+                        {% set fn = user.firstName|default('') %}
+                        {% set ln = user.lastName|default('') %}
+                        {% set initials = (fn|slice(0, 1) ~ ln|slice(0, 1))|upper %}
+                        {% if not initials %}{% set initials = user.userIdentifier|slice(0, 2)|upper %}{% endif %}
+                        <span class="avatar-initials rounded-circle d-inline-flex align-items-center justify-content-center" style="width:7rem;height:7rem;font-size:1.75rem;">{{ initials }}</span>
+                    {% endif %}
+                </div>
+                <div class="col">
+                    <h1 class="h3 fw-bold mb-1">{{ user.fullName|default(user.userIdentifier) }}</h1>
+                    {% if user.university %}
+                        <p class="text-muted mb-2"><i class="bi bi-mortarboard me-1"></i>{{ user.university }}</p>
+                    {% endif %}
+                    <p class="small text-muted mb-2"><i class="bi bi-calendar-plus me-1"></i>Membre depuis le {{ user.createdAt|date('d/m/Y') }}</p>
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+                        <span class="d-inline-flex align-items-center gap-2">
+                            {{ starDisplay|raw }}
+                            <strong>{{ avgRating|number_format(1, ',', ' ') }}</strong><span class="text-muted">/5</span>
+                        </span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 small">
+                        <span class="badge bg-primary-subtle text-primary border">{{ tripStats.asDriver }} trajet(s) proposé(s)</span>
+                        <span class="badge bg-info-subtle text-info border">{{ tripStats.asPassenger }} réservation(s)</span>
+                    </div>
+                    {% if app.user and app.user.id == user.id %}
+                        <div class="mt-3">
+                            <a href="{{ path('app_profile_edit') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Modifier mon profil</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-trips" data-bs-toggle="tab" data-bs-target="#pane-trips" type="button" role="tab">Trajets proposés</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-reviews" data-bs-toggle="tab" data-bs-target="#pane-reviews" type="button" role="tab">Avis reçus</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="pane-trips" role="tabpanel">
+            {% if activeTrips is empty %}
+                <p class="text-muted">Aucun trajet actif pour le moment.</p>
+            {% else %}
+                <div class="row g-3">
+                    {% for trip in activeTrips %}
+                        <div class="col-md-6 col-xl-4">
+                            {% include 'components/trip_card.html.twig' with { trip: trip } only %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        <div class="tab-pane fade" id="pane-reviews" role="tabpanel">
+            {% if receivedRatings is empty %}
+                <p class="text-muted">Pas encore d’avis.</p>
+            {% else %}
+                <ul class="list-group list-group-flush shadow-sm rounded border-0">
+                    {% for r in receivedRatings %}
+                        {% set rev = r.reviewer %}
+                        <li class="list-group-item px-4 py-3">
+                            <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                                <strong>{{ rev.fullName|default(rev.userIdentifier) }}</strong>
+                                <span class="small text-muted">{{ r.createdAt|date('d/m/Y') }}</span>
+                            </div>
+                            <div class="mb-2" aria-label="Note {{ r.score }} sur 5">{{ p.review_stars(r.score) }}</div>
+                            {% if r.comment %}
+                                <p class="mb-0 small" style="white-space: pre-wrap;">{{ r.comment }}</p>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

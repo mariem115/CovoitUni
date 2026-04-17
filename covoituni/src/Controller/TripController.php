@@ -2,16 +2,17 @@
 
 namespace App\Controller;
 
-use App\Entity\Reservation;
 use App\Entity\Trip;
 use App\Entity\User;
 use App\Form\TripType;
 use App\Repository\ReservationRepository;
 use App\Repository\TripRepository;
 use App\Security\TripVoter;
+use App\Service\TripService;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Tools\Pagination\Paginator;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -20,13 +21,15 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class TripController extends AbstractController
 {
     #[Route('/trajets', name: 'app_trip_index', methods: ['GET'])]
-    public function index(Request $request, TripRepository $tripRepository): Response
-    {
+    public function index(
+        Request $request,
+        TripRepository $tripRepository,
+        PaginatorInterface $paginator,
+    ): Response {
         $departure = $request->query->getString('departure');
         $destination = $request->query->getString('destination');
         $dateStr = $request->query->getString('date');
         $minSeats = max(1, (int) $request->query->get('seats', 1));
-        $page = max(1, (int) $request->query->get('page', 1));
 
         $date = null;
         if ($dateStr !== '') {
@@ -43,20 +46,32 @@ class TripController extends AbstractController
                 ->setParameter('minSeats', $minSeats);
         }
 
-        $qb->setFirstResult(($page - 1) * 9)->setMaxResults(9);
-        $paginator = new Paginator($qb->getQuery(), false);
-        $totalItems = $paginator->count();
-        $totalPages = max(1, (int) ceil($totalItems / 9));
+        $pagination = $paginator->paginate(
+            $qb,
+            $request->query->getInt('page', 1),
+            9,
+        );
+
+        if ($this->wantsTripIndexJson($request)) {
+            return new JsonResponse([
+                'html' => $this->renderView('trip/_trip_search_fragment.html.twig', [
+                    'pagination' => $pagination,
+                ]),
+                'meta' => sprintf(
+                    '%d résultat%s',
+                    $pagination->getTotalItemCount(),
+                    $pagination->getTotalItemCount() > 1 ? 's' : '',
+                ),
+            ]);
+        }
 
         return $this->render('trip/index.html.twig', [
-            'trips' => iterator_to_array($paginator),
+            'pagination' => $pagination,
+            'paginationTotal' => $pagination->getTotalItemCount(),
             'departure' => $departure,
             'destination' => $destination,
             'date' => $dateStr,
             'seats' => $minSeats,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'totalItems' => $totalItems,
         ]);
     }
 
@@ -70,7 +85,9 @@ class TripController extends AbstractController
         $trip = new Trip();
         $trip->setDriver($user);
 
-        $form = $this->createForm(TripType::class, $trip);
+        $form = $this->createForm(TripType::class, $trip, [
+            'validation_groups' => ['Default', 'trip_create'],
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -94,7 +111,7 @@ class TripController extends AbstractController
     public function show(
         Trip $trip,
         ReservationRepository $reservationRepository,
-        TripRepository $tripRepository,
+        TripService $tripService,
     ): Response {
         $user = $this->getUser();
         if (!$trip->isActive() && (!$user instanceof User || $user->getId() !== $trip->getDriver()?->getId())) {
@@ -106,24 +123,16 @@ class TripController extends AbstractController
             $userReservation = $reservationRepository->findBlockingReservationForPassenger($trip, $user);
         }
 
-        $canBook = $user instanceof User
-            && $user->getId() !== $trip->getDriver()?->getId()
-            && $trip->getSeatsAvailable() > 0
-            && $trip->isActive()
-            && null === $userReservation;
-
-        $similarTrips = $tripRepository->findSimilarActiveTrips($trip, 4);
-        $passengers = [];
-        if ($user instanceof User && $user->getId() === $trip->getDriver()?->getId()) {
-            $passengers = $reservationRepository->findByTripOrdered($trip);
-        }
+        $bookInfo = $tripService->canUserBook($trip, $user instanceof User ? $user : null);
+        $similarTrips = $tripService->getSimilarTrips($trip, 3);
+        $tripTimingLabel = $tripService->formatTripDuration($trip);
 
         return $this->render('trip/show.html.twig', [
             'trip' => $trip,
             'userReservation' => $userReservation,
-            'canBook' => $canBook,
+            'bookInfo' => $bookInfo,
             'similarTrips' => $similarTrips,
-            'passengers' => $passengers,
+            'tripTimingLabel' => $tripTimingLabel,
         ]);
     }
 
@@ -168,10 +177,8 @@ class TripController extends AbstractController
         $this->denyAccessUnlessGranted(TripVoter::DELETE, $trip);
 
         $token = $request->request->getString('_token');
-        if (!$this->isCsrfTokenValid('delete_trip_'.$trip->getId(), $token)) {
-            $this->addFlash('danger', 'Jeton de sécurité invalide.');
-
-            return $this->redirectToRoute('app_trip_show', ['id' => $trip->getId()]);
+        if (!$this->isCsrfTokenValid('delete'.$trip->getId(), $token)) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
         }
 
         $trip->setIsActive(false);
@@ -182,58 +189,26 @@ class TripController extends AbstractController
         return $this->redirectToRoute('app_profile_trips');
     }
 
-    #[Route('/trajets/{id}/reserver', name: 'app_trip_reserve', requirements: ['id' => '\d+'], methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
-    public function reserve(Request $request, Trip $trip, EntityManagerInterface $entityManager, ReservationRepository $reservationRepository): Response
-    {
-        $token = $request->request->getString('_token');
-        if (!$this->isCsrfTokenValid('reserve_trip_'.$trip->getId(), $token)) {
-            $this->addFlash('danger', 'Jeton de sécurité invalide.');
-
-            return $this->redirectToRoute('app_trip_show', ['id' => $trip->getId()]);
-        }
-
-        /** @var User $user */
-        $user = $this->getUser();
-
-        if ($user->getId() === $trip->getDriver()?->getId()
-            || !$trip->isActive()
-            || $trip->getSeatsAvailable() < 1) {
-            $this->addFlash('danger', 'Réservation impossible.');
-
-            return $this->redirectToRoute('app_trip_show', ['id' => $trip->getId()]);
-        }
-
-        if (null !== $reservationRepository->findBlockingReservationForPassenger($trip, $user)) {
-            $this->addFlash('info', 'Vous avez déjà une réservation pour ce trajet.');
-
-            return $this->redirectToRoute('app_trip_show', ['id' => $trip->getId()]);
-        }
-
-        $requested = max(1, (int) $request->request->get('seats', 1));
-        $seats = min($requested, $trip->getSeatsAvailable());
-
-        $reservation = new Reservation();
-        $reservation->setTrip($trip);
-        $reservation->setPassenger($user);
-        $reservation->setStatus('pending');
-        $reservation->setSeatsBooked($seats);
-
-        $trip->setSeatsAvailable($trip->getSeatsAvailable() - $seats);
-
-        $entityManager->persist($reservation);
-        $entityManager->flush();
-
-        $this->addFlash('success', 'Demande de réservation envoyée au conducteur.');
-
-        return $this->redirectToRoute('app_trip_show', ['id' => $trip->getId()]);
-    }
-
     private function normalizeTripPrice(Trip $trip): void
     {
         $p = $trip->getPricePerSeat();
         if (null === $p || '' === trim((string) $p)) {
             $trip->setPricePerSeat(null);
         }
+    }
+
+    private function wantsTripIndexJson(Request $request): bool
+    {
+        if ('json' === $request->query->getString('format')) {
+            return true;
+        }
+
+        if ($request->isXmlHttpRequest()) {
+            return true;
+        }
+
+        $accept = $request->headers->get('Accept', '');
+
+        return str_contains($accept, 'application/json');
     }
 }
