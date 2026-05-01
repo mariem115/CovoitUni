@@ -71,7 +71,9 @@ class DashboardController extends AbstractDashboardController
 
     public function configureDashboard(): Dashboard
     {
-        return Dashboard::new()->setTitle('CovoitUni Admin');
+        return Dashboard::new()
+            ->setTitle('CovoitUni Admin')
+            ->disableDarkMode();
     }
 
     public function configureAssets(): Assets

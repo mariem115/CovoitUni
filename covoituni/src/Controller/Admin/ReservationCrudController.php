@@ -9,9 +9,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -59,7 +59,14 @@ class ReservationCrudController extends AbstractCrudController
                 'cancelled' => 'danger',
             ]);
         yield IntegerField::new('seatsBooked');
-        yield DateTimeField::new('createdAt');
+        yield TextField::new('eaCreatedAt', 'Created at')
+            ->setVirtual(true)
+            ->formatValue(static function (mixed $value, ?Reservation $entity): string {
+                $dt = $entity?->getCreatedAt();
+
+                return $dt instanceof \DateTimeInterface ? $dt->format('d/m/Y H:i') : '';
+            })
+            ->hideOnForm();
         yield BooleanField::new('isRated');
     }
 }

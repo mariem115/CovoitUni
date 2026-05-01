@@ -19,7 +19,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
-use EasyCorp\Bundle\EasyAdminBundle\Filter\DateTimeFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -42,8 +41,7 @@ class TripCrudController extends AbstractCrudController
     public function configureFilters(Filters $filters): Filters
     {
         return $filters
-            ->add(BooleanFilter::new('isActive'))
-            ->add(DateTimeFilter::new('departureDateTime'));
+            ->add(BooleanFilter::new('isActive'));
     }
 
     public function configureFields(string $pageName): iterable
@@ -51,13 +49,28 @@ class TripCrudController extends AbstractCrudController
         yield IdField::new('id');
         yield TextField::new('departure');
         yield TextField::new('destination');
-        yield DateTimeField::new('departureDateTime');
+        yield TextField::new('eaDeparture', 'Departure')
+            ->setVirtual(true)
+            ->formatValue(static function (mixed $value, ?Trip $entity): string {
+                $dt = $entity?->getDepartureDateTime();
+
+                return $dt instanceof \DateTimeInterface ? $dt->format('d/m/Y H:i') : '';
+            })
+            ->hideOnForm();
+        yield DateTimeField::new('departureDateTime', 'Departure')->onlyOnForms();
         yield IntegerField::new('seatsTotal');
         yield IntegerField::new('seatsAvailable');
         yield NumberField::new('pricePerSeat');
         yield BooleanField::new('isActive');
         yield AssociationField::new('driver')->autocomplete();
-        yield DateTimeField::new('createdAt');
+        yield TextField::new('eaCreatedAt', 'Created at')
+            ->setVirtual(true)
+            ->formatValue(static function (mixed $value, ?Trip $entity): string {
+                $dt = $entity?->getCreatedAt();
+
+                return $dt instanceof \DateTimeInterface ? $dt->format('d/m/Y H:i') : '';
+            })
+            ->hideOnForm();
     }
 
     public function configureActions(Actions $actions): Actions

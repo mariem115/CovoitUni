@@ -1,11 +1,6 @@
-# Enable stateless CSRF protection for forms and logins/logouts
+# Session-based CSRF only (this app uses framework.session: true).
+# Avoids stateless/cookie CSRF issues in local dev (e.g. "Invalid CSRF token" on login).
 framework:
     form:
         csrf_protection:
             token_id: submit
-
-    csrf_protection:
-        stateless_token_ids:
-            - submit
-            - authenticate
-            - logout

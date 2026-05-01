@@ -14,7 +14,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
@@ -54,7 +53,14 @@ class UserCrudController extends AbstractCrudController
         yield EmailField::new('email');
         yield TextField::new('university');
         yield ArrayField::new('roles');
-        yield DateTimeField::new('createdAt');
+        yield TextField::new('eaCreatedAt', 'Created at')
+            ->setVirtual(true)
+            ->formatValue(static function (mixed $value, ?User $entity): string {
+                $dt = $entity?->getCreatedAt();
+
+                return $dt instanceof \DateTimeInterface ? $dt->format('d/m/Y H:i') : '';
+            })
+            ->hideOnForm();
         yield BooleanField::new('isVerified');
     }
 

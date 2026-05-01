@@ -25,8 +25,8 @@ body.cu-page-fade {
 /* --- Navbar glass --- */
 .navbar.navbar-glass {
     background: rgba(255, 255, 255, 0.82) !important;
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
@@ -46,7 +46,9 @@ body.cu-page-fade {
     border-radius: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     border: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .card.trip-card-premium:hover {
@@ -56,7 +58,9 @@ body.cu-page-fade {
 
 /* Legacy lift helper kept in sync */
 .card.card-hover-lift {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .card.card-hover-lift:hover {
@@ -164,8 +168,13 @@ body.cu-page-fade {
 
 /* --- Layout / type --- */
 body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: #f8fafc;
+    font-family:
+        "Inter",
+        system-ui,
+        -apple-system,
+        sans-serif;
+    background-color: #f8f9fa;
+    color: #212529;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -194,7 +203,6 @@ main {
 
 .navbar-brand-covoit {
     font-weight: 600;
-    color: #0f172a !important;
 }
 
 .navbar-brand-covoit .brand-emoji {
@@ -203,27 +211,64 @@ main {
 
 .nav-link-covoit {
     font-weight: 500;
-    color: #475569 !important;
 }
 
-.nav-link-covoit:hover,
-.nav-link-covoit.active {
-    color: var(--cu-primary) !important;
+.navbar.bg-dark .navbar-brand-covoit {
+    color: #f8f9fa !important;
+}
+
+.navbar.bg-dark .nav-link-covoit {
+    color: rgba(248, 249, 250, 0.8) !important;
+}
+
+.navbar.bg-dark .nav-link-covoit:hover,
+.navbar.bg-dark .nav-link-covoit.active {
+    color: #ffffff !important;
 }
 
 footer.footer-covoit {
     flex-shrink: 0;
-    background: #0f172a;
-    color: #94a3b8;
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+}
+
+footer.footer-covoit h5,
+footer.footer-covoit h6,
+footer.footer-covoit .footer-title {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+footer.footer-covoit p,
+footer.footer-covoit span,
+footer.footer-covoit li,
+footer.footer-covoit .small {
+    color: #cbd5e1 !important;
 }
 
 footer.footer-covoit a {
-    color: #cbd5e1;
+    color: #cbd5e1 !important;
     text-decoration: none;
 }
 
 footer.footer-covoit a:hover {
-    color: #fff;
+    color: #ffffff !important;
+    text-decoration: underline;
+}
+
+footer.footer-covoit .bi {
+    color: #94a3b8 !important;
+}
+
+footer.footer-covoit hr,
+footer.footer-covoit .footer-divider {
+    border: 0;
+    border-top: 1px solid #334155 !important;
+    opacity: 1;
+}
+
+footer.footer-covoit .text-muted {
+    color: #94a3b8 !important;
 }
 
 /* Leaflet container polish */

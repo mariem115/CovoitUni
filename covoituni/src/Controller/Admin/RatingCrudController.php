@@ -6,10 +6,10 @@ use App\Entity\Rating;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_ADMIN')]
@@ -43,6 +43,13 @@ class RatingCrudController extends AbstractCrudController
                 return str_repeat('★', $n).str_repeat("\u{2606}", 5 - $n).' ('.$n.'/5)';
             });
         yield TextareaField::new('comment');
-        yield DateTimeField::new('createdAt');
+        yield TextField::new('eaCreatedAt', 'Created at')
+            ->setVirtual(true)
+            ->formatValue(static function (mixed $value, ?Rating $entity): string {
+                $dt = $entity?->getCreatedAt();
+
+                return $dt instanceof \DateTimeInterface ? $dt->format('d/m/Y H:i') : '';
+            })
+            ->hideOnForm();
     }
 }
