@@ -11,12 +11,12 @@
         <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
             <div>
                 <h3 class="h6 fw-semibold mb-1 text-body">
-                    <i class="bi bi-geo-alt text-primary me-1"></i>{{ trip.departure }}
-                    <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                    <i class="fa-solid fa-location-dot text-primary me-1"></i>{{ trip.departure }}
+                    <i class="fa-solid fa-arrow-right mx-1 text-muted"></i>
                     {{ trip.destination }}
                 </h3>
                 <p class="small text-muted mb-0">
-                    <i class="bi bi-calendar-event me-1"></i>{{ trip.departureDateTime|date('d/m/Y à H:i') }}
+                    <i class="fa-solid fa-calendar me-1"></i>{{ trip.departureDateTime|date('d/m/Y à H:i') }}
                 </p>
             </div>
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ trip.seatsAvailable }} place{{ trip.seatsAvailable > 1 ? 's' : '' }}</span>
@@ -26,6 +26,19 @@
             <div class="small">
                 <span class="text-muted d-block">Conducteur</span>
                 <span class="fw-medium">{{ driver.fullName ? driver.fullName : driver.userIdentifier }}</span>
+                <span class="d-block stars-display mt-1" aria-label="Note moyenne du conducteur">
+                    {% set avg = driver.averageRating %}
+                    {% for i in 1..5 %}
+                        <i class="{{ i <= avg ? 'fa-solid fa-star' : 'fa-regular fa-star' }}"></i>
+                    {% endfor %}
+                </span>
+                <span class="text-muted d-block mt-1">
+                    {% if driver.vehiculeMarque %}
+                        {{ driver.vehiculeMarque }} {{ driver.vehiculeModele }} · {{ driver.vehiculeCouleur }}
+                    {% else %}
+                        Véhicule non renseigné
+                    {% endif %}
+                </span>
             </div>
         </div>
         <div class="d-flex align-items-center justify-content-between gap-2">
@@ -36,7 +49,7 @@
                     Gratuit
                 {% endif %}
             </span>
-            <a href="{{ path('app_trip_show', { id: trip.id }) }}" class="btn btn-outline-primary btn-sm">Voir le trajet</a>
+            <a href="{{ path('app_trajet_detail', { id: trip.id }) }}" class="btn btn-outline-secondary btn-sm">Voir le trajet</a>
         </div>
     </div>
 </div>

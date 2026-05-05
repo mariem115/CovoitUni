@@ -24,6 +24,10 @@ class TripService
             return ['canBook' => false, 'reason' => 'not_logged_in'];
         }
 
+        if (!\in_array('ROLE_PASSAGER', $user->getRoles(), true)) {
+            return ['canBook' => false, 'reason' => 'not_passenger'];
+        }
+
         if ($user->getId() === $trip->getDriver()?->getId()) {
             return ['canBook' => false, 'reason' => 'is_driver'];
         }

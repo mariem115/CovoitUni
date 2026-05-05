@@ -46,7 +46,7 @@ class TripCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield IdField::new('id');
+        yield IdField::new('id')->hideOnForm();
         yield TextField::new('departure');
         yield TextField::new('destination');
         yield TextField::new('eaDeparture', 'Departure')
@@ -75,7 +75,7 @@ class TripCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        $desactiver = Action::new('desactiver', 'Désactiver', 'bi bi-x-octagon-fill')
+        $desactiver = Action::new('desactiver', 'Désactiver', 'fa-solid fa-circle-xmark')
             ->linkToCrudAction('desactiver')
             ->asWarningAction()
             ->renderAsForm()

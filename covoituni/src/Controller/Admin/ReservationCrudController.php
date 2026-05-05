@@ -44,7 +44,7 @@ class ReservationCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield IdField::new('id');
+        yield IdField::new('id')->hideOnForm();
         yield AssociationField::new('passenger')->autocomplete();
         yield AssociationField::new('trip')->autocomplete();
         yield ChoiceField::new('status')

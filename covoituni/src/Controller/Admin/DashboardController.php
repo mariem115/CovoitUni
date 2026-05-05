@@ -79,15 +79,15 @@ class DashboardController extends AbstractDashboardController
     public function configureAssets(): Assets
     {
         return parent::configureAssets()
-            ->addCssFile('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css');
+            ->addCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
     }
 
     public function configureMenuItems(): iterable
     {
-        yield MenuItem::linkToDashboard('Dashboard', 'bi bi-bar-chart-line-fill');
-        yield MenuItem::linkTo(UserCrudController::class, 'Users', 'bi bi-people-fill');
-        yield MenuItem::linkTo(TripCrudController::class, 'Trips', 'bi bi-car-front-fill');
-        yield MenuItem::linkTo(ReservationCrudController::class, 'Reservations', 'bi bi-calendar-check-fill');
-        yield MenuItem::linkTo(RatingCrudController::class, 'Ratings', 'bi bi-star-fill');
+        yield MenuItem::linkToDashboard('Dashboard', 'fa-solid fa-chart-line');
+        yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fa-solid fa-users');
+        yield MenuItem::linkTo(TripCrudController::class, 'Trips', 'fa-solid fa-car');
+        yield MenuItem::linkTo(ReservationCrudController::class, 'Reservations', 'fa-solid fa-calendar-check');
+        yield MenuItem::linkTo(RatingCrudController::class, 'Ratings', 'fa-solid fa-star');
     }
 }

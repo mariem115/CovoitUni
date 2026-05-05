@@ -17,7 +17,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class RatingController extends AbstractController
 {
     #[Route('/noter/{reservationId}', name: 'app_rating_new', requirements: ['reservationId' => '\d+'], methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_PASSAGER')]
     public function rate(
         Request $request,
         #[MapEntity(id: 'reservationId')]
@@ -27,7 +27,7 @@ class RatingController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $this->denyAccessUnlessGranted('ROLE_USER');
+        $this->denyAccessUnlessGranted('ROLE_PASSAGER');
 
         $reason = $this->getRatingBlockReason($reservation, $user);
         if (null !== $reason) {
@@ -70,27 +70,25 @@ class RatingController extends AbstractController
 
     private function getRatingBlockReason(Reservation $reservation, User $user): ?string
     {
-        if ($user->getId() !== $reservation->getPassenger()?->getId()) {
+        $passenger = $reservation->getPassenger();
+        if (null === $passenger || (int) $user->getId() !== (int) $passenger->getId()) {
             return 'Vous ne pouvez pas noter cette réservation.';
+        }
+
+        if ($reservation->isPassengerRatingFormOpen()) {
+            return null;
         }
 
         if ('confirmed' !== $reservation->getStatus()) {
             return 'Seules les réservations confirmées peuvent être notées.';
         }
 
-        $trip = $reservation->getTrip();
-        if (null === $trip || $trip->getDepartureDateTime() >= new \DateTimeImmutable()) {
-            return 'Vous pourrez noter le conducteur après la date du trajet.';
+        if ($reservation->isRated() || null !== $reservation->getRating()) {
+            return null !== $reservation->getRating()
+                ? 'Un avis existe déjà pour cette réservation.'
+                : 'Ce trajet a déjà été noté.';
         }
 
-        if ($reservation->isRated()) {
-            return 'Ce trajet a déjà été noté.';
-        }
-
-        if (null !== $reservation->getRating()) {
-            return 'Un avis existe déjà pour cette réservation.';
-        }
-
-        return null;
+        return 'Vous pourrez noter le conducteur après la date du trajet.';
     }
 }

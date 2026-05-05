@@ -19,17 +19,42 @@
                     <div class="mb-3">
                         <label for="inputEmail" class="form-label">Adresse e-mail</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                            <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
                             <input type="email" name="_username" id="inputEmail" class="form-control" value="{{ last_username }}" autocomplete="email" required autofocus>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="inputPassword" class="form-label">Mot de passe</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
                             <input type="password" name="_password" id="inputPassword" class="form-control" autocomplete="current-password" required>
                         </div>
                     </div>
+                    <fieldset class="border-0 p-0 mb-3">
+                        <legend class="form-label mb-2">Je me connecte en tant que :</legend>
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="_role"
+                                value="passager"
+                                id="rolePassager"
+                                checked
+                            >
+                            <label class="form-check-label" for="rolePassager">Étudiant passager</label>
+                        </div>
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="_role"
+                                value="conducteur"
+                                id="roleConducteur"
+                            >
+                            <label class="form-check-label" for="roleConducteur">Étudiant conducteur</label>
+                        </div>
+                        <p class="form-text small text-muted mb-0 mt-2">Les comptes administrateur sont redirigés vers l’administration ; ce choix ne s’applique pas.</p>
+                    </fieldset>
                     <div class="mb-4 form-check">
                         <input type="checkbox" name="_remember_me" id="remember_me" class="form-check-input" value="1">
                         <label class="form-check-label" for="remember_me">Se souvenir de moi</label>

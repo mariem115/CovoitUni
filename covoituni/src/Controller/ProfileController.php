@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Controller;
-
 use App\Entity\User;
 use App\Form\ProfileType;
 use App\Repository\RatingRepository;
@@ -66,6 +64,17 @@ class ProfileController extends AbstractController
         ]);
     }
 
+    #[Route('/conducteur/{id}/profil-public', name: 'app_conducteur_public_profile', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function conducteurPublicProfile(
+        int $id,
+        UserRepository $userRepository,
+        TripRepository $tripRepository,
+        RatingRepository $ratingRepository,
+        UserService $userService,
+    ): Response {
+        return $this->show($id, $userRepository, $tripRepository, $ratingRepository, $userService);
+    }
+
     #[Route('/profil/modifier', name: 'app_profile_edit', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_USER')]
     public function edit(Request $request, EntityManagerInterface $entityManager): Response
@@ -73,7 +82,9 @@ class ProfileController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $form = $this->createForm(ProfileType::class, $user);
+        $form = $this->createForm(ProfileType::class, $user, [
+            'include_vehicle_fields' => $this->isGranted('ROLE_CONDUCTEUR'),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -111,7 +122,7 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/mes-trajets', name: 'app_profile_trips')]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_CONDUCTEUR')]
     public function myTrips(TripRepository $tripRepository): Response
     {
         /** @var User $user */

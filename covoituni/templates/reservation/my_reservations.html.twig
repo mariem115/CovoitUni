@@ -13,14 +13,15 @@
     {% set status = r.status %}
     {% set badge_class = status == 'pending' ? 'warning text-dark' : (status == 'confirmed' ? 'success' : 'secondary') %}
     {% set cancellable = status in ['pending', 'confirmed'] and dep >= now %}
-    {% set can_rate = status == 'confirmed' and not r.isRated and dep < now %}
+    {# Même règle que Reservation::isPassengerRatingFormOpen() (évite les comparaisons de dates ambiguës en Twig) #}
+    {% set can_rate = r.passengerRatingFormOpen %}
 
     <div class="card border-0 shadow-sm card-hover-lift mb-3">
         <div class="card-body p-4">
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
                 <div>
-                    <h2 class="h6 fw-bold mb-1">{{ trip.departure }} <i class="bi bi-arrow-right text-primary"></i> {{ trip.destination }}</h2>
-                    <p class="small text-muted mb-0"><i class="bi bi-calendar-event me-1"></i>{{ dep|date('d/m/Y à H:i') }}</p>
+                    <h2 class="h6 fw-bold mb-1">{{ trip.departure }} <i class="fa-solid fa-arrow-right text-primary"></i> {{ trip.destination }}</h2>
+                    <p class="small text-muted mb-0"><i class="fa-solid fa-calendar me-1"></i>{{ dep|date('d/m/Y à H:i') }}</p>
                 </div>
                 <span class="badge bg-{{ badge_class }}">{{ status }}</span>
             </div>
@@ -43,6 +44,7 @@
                 {% if can_rate %}
                     <a href="{{ path('app_rating_new', { reservationId: r.id }) }}" class="btn btn-outline-primary btn-sm">Noter le conducteur</a>
                 {% endif %}
+                <a href="{{ path('app_conducteur_public_profile', { id: driver.id }) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-star me-1"></i>Profil du conducteur</a>
                 <a href="{{ path('app_trip_show', { id: trip.id }) }}" class="btn btn-light border btn-sm">Voir le trajet</a>
             </div>
         </div>

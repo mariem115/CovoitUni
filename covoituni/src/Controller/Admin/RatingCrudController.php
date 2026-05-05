@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Rating;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
@@ -30,7 +31,8 @@ class RatingCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield IdField::new('id');
+        yield IdField::new('id')->hideOnForm();
+        yield AssociationField::new('reservation')->autocomplete();
         yield AssociationField::new('reviewer')->autocomplete();
         yield AssociationField::new('driver')->autocomplete();
         yield IntegerField::new('score')
@@ -51,5 +53,34 @@ class RatingCrudController extends AbstractCrudController
                 return $dt instanceof \DateTimeInterface ? $dt->format('d/m/Y H:i') : '';
             })
             ->hideOnForm();
+    }
+
+    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        parent::persistEntity($entityManager, $entityInstance);
+        $this->syncReservationRatedFlag($entityManager, $entityInstance);
+    }
+
+    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        parent::updateEntity($entityManager, $entityInstance);
+        $this->syncReservationRatedFlag($entityManager, $entityInstance);
+    }
+
+    private function syncReservationRatedFlag(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        if (!$entityInstance instanceof Rating) {
+            return;
+        }
+
+        $reservation = $entityInstance->getReservation();
+        if (null === $reservation) {
+            return;
+        }
+
+        if (!$reservation->isRated()) {
+            $reservation->setIsRated(true);
+            $entityManager->flush();
+        }
     }
 }

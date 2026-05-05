@@ -3,10 +3,12 @@
 namespace App\Entity;
 
 use App\Repository\TripRepository;
+use App\Service\LocationData;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TripRepository::class)]
 #[ORM\HasLifecycleCallbacks]
@@ -18,9 +20,11 @@ class Trip
     private ?int $id = null;
 
     #[ORM\Column(length: 200)]
+    #[Assert\Choice(callback: [LocationData::class, 'getVillesChoices'])]
     private ?string $departure = null;
 
     #[ORM\Column(length: 200)]
+    #[Assert\Choice(callback: [LocationData::class, 'getVillesChoices'])]
     private ?string $destination = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
@@ -228,5 +232,35 @@ class Trip
         }
 
         return $n;
+    }
+
+    public function isReservable(): bool
+    {
+        if (!$this->isActive) {
+            return false;
+        }
+
+        if (($this->seatsAvailable ?? 0) < 1) {
+            return false;
+        }
+
+        return null !== $this->departureDateTime && $this->departureDateTime > new \DateTimeImmutable();
+    }
+
+    public function getEaDeparture(): string
+    {
+        return $this->departureDateTime instanceof \DateTimeInterface ? $this->departureDateTime->format('d/m/Y H:i') : '—';
+    }
+
+    public function getEaCreatedAt(): string
+    {
+        return $this->createdAt instanceof \DateTimeInterface ? $this->createdAt->format('d/m/Y H:i') : '—';
+    }
+
+    public function __toString(): string
+    {
+        $when = $this->departureDateTime?->format('d/m/Y H:i') ?? '—';
+
+        return sprintf('%s → %s (%s)', $this->departure ?? '?', $this->destination ?? '?', $when);
     }
 }

@@ -18,9 +18,9 @@
 
 {% block rating_comment_row %}
     <div class="form-floating mb-4">
-        {{ form_widget(form.comment, { attr: (form.comment.vars.attr|default({}))|merge({ class: 'form-control', placeholder: ' ', style: 'height:8rem' }) }) }}
-        {{ form_label(form.comment) }}
-        {{ form_errors(form.comment) }}
+        {{ form_widget(form, { attr: (form.vars.attr|default({}))|merge({ class: 'form-control', placeholder: ' ', style: 'height:8rem' }) }) }}
+        {{ form_label(form) }}
+        {{ form_errors(form) }}
     </div>
 {% endblock %}
 

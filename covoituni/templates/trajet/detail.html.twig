@@ -1,0 +1,166 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ trip.departure }} → {{ trip.destination }} — {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    {% if is_granted('ROLE_PASSAGER') %}
+        <a href="{{ path('app_trip_index') }}" class="btn btn-link text-decoration-none ps-0 mb-3"><i class="fa-solid fa-arrow-left me-1"></i>Retour à la recherche</a>
+    {% elseif is_granted('ROLE_CONDUCTEUR') %}
+        <a href="{{ path('app_profile_trips') }}" class="btn btn-link text-decoration-none ps-0 mb-3"><i class="fa-solid fa-arrow-left me-1"></i>Retour à mes trajets</a>
+    {% endif %}
+    {% set avgRating = driver.averageRating %}
+    {% set fn = driver.firstName|default('') %}
+    {% set ln = driver.lastName|default('') %}
+    {% set initials = (fn|slice(0, 1) ~ ln|slice(0, 1))|upper %}
+    {% if not initials %}{% set initials = driver.userIdentifier|slice(0, 2)|upper %}{% endif %}
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body p-4">
+                    <h1 class="h3 fw-bold mb-1">{{ trip.departure }} <i class="fa-solid fa-arrow-right text-primary mx-1"></i> {{ trip.destination }}</h1>
+                    <p class="text-muted mb-0">
+                        <i class="fa-solid fa-calendar me-1"></i>{{ trip.departureDateTime|date('d/m/Y') }}
+                        · <i class="fa-solid fa-clock ms-2 me-1"></i>{{ trip.departureDateTime|date('H:i') }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="text-muted small">Places disponibles</div>
+                            <div class="fw-semibold">{{ trip.seatsAvailable }} / {{ trip.seatsTotal }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small">Prix</div>
+                            <div class="fw-semibold">
+                                {% if trip.pricePerSeat is not null and trip.pricePerSeat != '' %}
+                                    {{ trip.pricePerSeat|number_format(2, ',', ' ') }} TND
+                                {% else %}
+                                    Gratuit
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small">Statut</div>
+                            {% if trip.isReservable() %}
+                                <span class="badge badge-actif">actif</span>
+                            {% elseif trip.isActive %}
+                                <span class="badge badge-complet">complet</span>
+                            {% else %}
+                                <span class="badge badge-annule">annulé</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if trip.description %}
+                <div class="card mb-4">
+                    <div class="card-header">Description</div>
+                    <div class="card-body">
+                        <p class="mb-0" style="white-space: pre-wrap;">{{ trip.description }}</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-body p-4">
+                    {% if is_granted('ROLE_PASSAGER') and trip.isReservable() and bookInfo.canBook %}
+                        <form method="post" action="{{ path('app_reservation_book', { tripId: trip.id }) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('book_trip_' ~ trip.id) }}">
+                            <button type="submit" class="btn btn-success">Réserver ce trajet</button>
+                        </form>
+                    {% elseif is_granted('ROLE_CONDUCTEUR') %}
+                        <p class="text-muted mb-0">En tant que conducteur, vous ne pouvez pas réserver un trajet en tant que passager.</p>
+                    {% else %}
+                        {% set reason = bookInfo.reason %}
+                        <p class="text-muted mb-0">
+                            {% if reason == 'no_seats' %}Plus de places disponibles sur ce trajet.
+                            {% elseif reason == 'already_booked' %}Vous avez déjà une réservation pour ce trajet.
+                            {% elseif reason == 'trip_past' %}Ce trajet n’est plus disponible (date passée ou trajet retiré).
+                            {% elseif reason == 'not_passenger' %}Réservation réservée aux comptes passager.
+                            {% else %}Réservation indisponible pour ce trajet.{% endif %}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header">Conducteur</div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        {% if driver.profilePhoto %}
+                            <img src="{{ asset('images/uploads/' ~ driver.profilePhoto) }}" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
+                        {% else %}
+                            <span class="avatar-initials rounded-circle d-inline-flex align-items-center justify-content-center" style="width:64px;height:64px;">{{ initials }}</span>
+                        {% endif %}
+                        <div>
+                            <div class="fw-semibold">{{ driver.fullName ? driver.fullName : driver.userIdentifier }}</div>
+                            {% if driver.university %}
+                                <div class="small text-muted">{{ driver.university }}</div>
+                            {% endif %}
+                            <div class="small text-muted">Membre depuis le {{ driver.createdAt|date('d/m/Y') }}</div>
+                        </div>
+                    </div>
+                    <div class="stars-display mb-2">
+                        {% for i in 1..5 %}
+                            <i class="{{ i <= avgRating ? 'fa-solid fa-star' : 'fa-regular fa-star' }}"></i>
+                        {% endfor %}
+                        <span class="small text-muted ms-1">({{ ratingsCount }} avis)</span>
+                    </div>
+                    <a href="{{ path('app_conducteur_public_profile', { id: driver.id }) }}" class="btn btn-outline-primary btn-sm">Voir le profil complet</a>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Véhicule</div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Marque :</strong> {{ driver.vehiculeMarque ?: 'Non renseignée' }}</p>
+                    <p class="mb-1"><strong>Modèle :</strong> {{ driver.vehiculeModele ?: 'Non renseigné' }}</p>
+                    <p class="mb-1"><strong>Couleur :</strong> {{ driver.vehiculeCouleur ?: 'Non renseignée' }}</p>
+                    {% if driver.vehiculeAnnee %}
+                        <p class="mb-0"><strong>Année :</strong> {{ driver.vehiculeAnnee }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Avis récents</div>
+                <div class="card-body">
+                    {% if recentRatings is empty %}
+                        <p class="text-muted small mb-0">Aucun avis pour le moment.</p>
+                    {% else %}
+                        {% for rating in recentRatings %}
+                            {% set reviewer = rating.reviewer %}
+                            {% set rfn = reviewer.firstName|default('') %}
+                            {% set rln = reviewer.lastName|default('') %}
+                            {% set rini = (rfn|slice(0, 1) ~ rln|slice(0, 1))|upper %}
+                            {% if not rini %}{% set rini = reviewer.userIdentifier|slice(0, 2)|upper %}{% endif %}
+                            <div class="border-bottom pb-2 mb-2">
+                                <div class="d-flex justify-content-between align-items-center small mb-1">
+                                    <span class="fw-semibold">{{ rini }}</span>
+                                    <span class="text-muted">{{ rating.createdAt|date('d/m/Y') }}</span>
+                                </div>
+                                <div class="stars-display small mb-1">
+                                    {% for i in 1..5 %}
+                                        <i class="{{ i <= rating.score ? 'fa-solid fa-star' : 'fa-regular fa-star' }}"></i>
+                                    {% endfor %}
+                                </div>
+                                {% if rating.comment %}
+                                    <p class="small mb-0">{{ rating.comment }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

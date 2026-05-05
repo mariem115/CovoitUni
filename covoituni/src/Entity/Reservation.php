@@ -147,4 +147,40 @@ class Reservation
 
         return $this;
     }
+
+    /**
+     * Réservation confirmée, trajet déjà parti, pas encore d’avis (CTA « Noter le conducteur »).
+     * Nom is* pour l’accès Twig (ex. reservation.passengerRatingFormOpen).
+     */
+    public function isPassengerRatingFormOpen(): bool
+    {
+        if ('confirmed' !== $this->status) {
+            return false;
+        }
+
+        if ($this->isRated || null !== $this->rating) {
+            return false;
+        }
+
+        $dep = $this->trip?->getDepartureDateTime();
+        if (null === $dep) {
+            return false;
+        }
+
+        return $dep < new \DateTimeImmutable();
+    }
+
+    public function __toString(): string
+    {
+        $trip = $this->trip;
+        if ($trip instanceof Trip) {
+            return sprintf(
+                '#%s %s',
+                $this->id ?? '—',
+                (string) $trip,
+            );
+        }
+
+        return sprintf('Réservation #%s', $this->id ?? '—');
+    }
 }

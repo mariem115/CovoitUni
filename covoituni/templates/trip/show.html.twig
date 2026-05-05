@@ -16,32 +16,36 @@
 {% set avgRating = driver.averageRating %}
 
 <div class="container py-4">
-    <a href="{{ path('app_trip_index') }}" class="btn btn-link text-decoration-none ps-0 mb-3"><i class="bi bi-arrow-left me-1"></i>Retour aux trajets</a>
+    {% if is_granted('ROLE_PASSAGER') %}
+        <a href="{{ path('app_trip_index') }}" class="btn btn-link text-decoration-none ps-0 mb-3"><i class="fa-solid fa-arrow-left me-1"></i>Retour aux trajets</a>
+    {% else %}
+        <a href="{{ path('app_profile_trips') }}" class="btn btn-link text-decoration-none ps-0 mb-3"><i class="fa-solid fa-arrow-left me-1"></i>Retour à mes trajets</a>
+    {% endif %}
 
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
         <div>
             <h1 class="trip-route mb-2">
                 <span class="trip-route__from">{{ trip.departure }}</span>
-                <i class="bi bi-arrow-right text-primary flex-shrink-0"></i>
+                <i class="fa-solid fa-arrow-right text-primary flex-shrink-0"></i>
                 <span class="trip-route__to">{{ trip.destination }}</span>
             </h1>
-            <p class="small text-muted mb-2"><i class="bi bi-clock me-1"></i>{{ tripTimingLabel }}</p>
+            <p class="small text-muted mb-2"><i class="fa-solid fa-clock me-1"></i>{{ tripTimingLabel }}</p>
             <div class="d-flex flex-wrap gap-2">
                 <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-2">
-                    <i class="bi bi-calendar-event me-1"></i>{{ trip.departureDateTime|date('d/m/Y à H:i') }}
+                    <i class="fa-solid fa-calendar me-1"></i>{{ trip.departureDateTime|date('d/m/Y à H:i') }}
                 </span>
                 <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-3 py-2">
-                    <i class="bi bi-people me-1"></i>{{ trip.seatsAvailable }} / {{ trip.seatsTotal }} places libres
+                    <i class="fa-solid fa-users me-1"></i>{{ trip.seatsAvailable }} / {{ trip.seatsTotal }} places libres
                 </span>
                 {% if not trip.isActive %}
                     <span class="badge bg-warning text-dark rounded-pill px-3 py-2">Non publié</span>
                 {% endif %}
             </div>
         </div>
-        {% if is_granted('EDIT', trip) %}
+            {% if is_granted('EDIT', trip) and is_granted('ROLE_CONDUCTEUR') %}
             <div class="d-flex flex-wrap gap-2">
                 <a href="{{ path('app_trip_edit', { id: trip.id }) }}" class="btn btn-outline-primary btn-sm">Modifier</a>
-                <a href="{{ path('app_trip_passengers', { tripId: trip.id }) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-people me-1"></i>Passagers</a>
+                <a href="{{ path('app_trip_passengers', { tripId: trip.id }) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-users me-1"></i>Passagers</a>
                 <form method="post" action="{{ path('app_trip_delete', { id: trip.id }) }}" onsubmit="return confirm('Retirer ce trajet de la liste publique ?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ trip.id) }}">
                     <button type="submit" class="btn btn-outline-danger btn-sm">Supprimer</button>
@@ -93,7 +97,7 @@
                 </div>
             </div>
 
-            {% if is_granted('EDIT', trip) %}
+            {% if is_granted('EDIT', trip) and is_granted('ROLE_CONDUCTEUR') %}
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
                         <div>
@@ -128,13 +132,16 @@
                                 <div class="fw-semibold">{{ driver.fullName ? driver.fullName : driver.userIdentifier }}</div>
                                 <div class="small text-muted star-rating" aria-label="Note moyenne">
                                     {% for i in 1..5 %}
-                                        <i class="bi bi-star{{ i <= avgRating ? '-fill' : '' }}"></i>
+                                        <i class="{{ i <= avgRating ? 'fa-solid fa-star' : 'fa-regular fa-star' }}"></i>
                                     {% endfor %}
                                     <span class="ms-1">({{ avgRating|number_format(1, ',', ' ') }}/5)</span>
                                 </div>
                             </div>
                         </div>
-                        <a href="mailto:{{ driver.userIdentifier }}" class="btn btn-outline-primary w-100"><i class="bi bi-envelope me-2"></i>Contacter</a>
+                        {% if app.user.id != driver.id %}
+                            <a href="{{ path('app_conducteur_public_profile', { id: driver.id }) }}" class="btn btn-outline-secondary w-100 mb-2"><i class="fa-solid fa-star me-2"></i>Profil et avis</a>
+                        {% endif %}
+                        <a href="mailto:{{ driver.userIdentifier }}" class="btn btn-outline-primary w-100"><i class="fa-solid fa-envelope me-2"></i>Contacter</a>
                     </div>
                 </div>
 
@@ -148,19 +155,17 @@
                                 <span class="status-badge status-badge--{{ st == 'pending' ? 'pending' : (st == 'confirmed' ? 'confirmed' : 'cancelled') }}">{{ st }}</span>
                                 · {{ userReservation.seatsBooked }} place(s)
                             </p>
-                        {% elseif bookInfo.canBook %}
+                        {% elseif bookInfo.canBook and is_granted('ROLE_PASSAGER') %}
                             <form method="post" action="{{ path('app_reservation_book', { tripId: trip.id }) }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('book_trip_' ~ trip.id) }}">
                                 <button type="submit" class="btn btn-primary w-100">Réserver (1 place)</button>
                             </form>
                             <p class="small text-muted mt-2 mb-0"><a href="{{ path('app_reservation_my') }}">Voir mes réservations</a></p>
-                        {% elseif not app.user %}
-                            <p class="small text-muted mb-3">Connectez-vous pour réserver une place.</p>
-                            <a href="{{ path('app_login') }}" class="btn btn-primary w-100">Connexion</a>
                         {% else %}
                             {% set reason = bookInfo.reason %}
                             <p class="small text-muted mb-0">
                                 {% if reason == 'is_driver' %}Vous êtes le conducteur de ce trajet.
+                                {% elseif reason == 'not_passenger' %}La réservation est réservée aux comptes passager.
                                 {% elseif reason == 'no_seats' %}Plus de places disponibles.
                                 {% elseif reason == 'already_booked' %}Vous avez déjà une réservation pour ce trajet.
                                 {% elseif reason == 'trip_past' %}Ce trajet n’est plus disponible (date passée ou trajet retiré).

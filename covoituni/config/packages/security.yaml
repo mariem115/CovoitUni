@@ -20,7 +20,7 @@ security:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
-                default_target_path: app_home
+                success_handler: App\Security\LoginSuccessHandler
             logout:
                 path: app_logout
                 target: app_home
@@ -30,14 +30,26 @@ security:
 
     access_control:
         - { path: ^/admin, roles: ROLE_ADMIN }
-        - { path: ^/trajets/nouveau, roles: ROLE_USER }
-        - { path: ^/mes-trajets, roles: ROLE_USER }
-        - { path: ^/mes-reservations, roles: ROLE_USER }
-        - { path: ^/reserver, roles: ROLE_USER }
+        - { path: ^/connexion, roles: PUBLIC_ACCESS }
+        - { path: ^/inscription, roles: PUBLIC_ACCESS }
+        - { path: ^/$, roles: PUBLIC_ACCESS }
+        - { path: ^/trajets/nouveau, roles: ROLE_CONDUCTEUR }
+        - { path: ^/trajets/\d+/modifier, roles: ROLE_CONDUCTEUR }
+        - { path: ^/trajets/\d+/supprimer, roles: ROLE_CONDUCTEUR }
+        - { path: ^/mes-trajets, roles: ROLE_CONDUCTEUR }
+        - { path: ^/reserver, roles: ROLE_PASSAGER }
+        - { path: ^/mes-reservations, roles: ROLE_PASSAGER }
+        - { path: ^/noter, roles: ROLE_PASSAGER }
+        - { path: ^/trajets$, roles: ROLE_PASSAGER }
+        - { path: ^/trajet/, roles: ROLE_USER }
+        - { path: ^/trajets/\d+, roles: ROLE_USER }
+        - { path: ^/reservation/\d+/confirmer, roles: ROLE_CONDUCTEUR }
+        - { path: ^/reservation/\d+/refuser, roles: ROLE_CONDUCTEUR }
+        - { path: ^/reservation/\d+/annuler, roles: ROLE_PASSAGER }
         - { path: ^/reservation/, roles: ROLE_USER }
-        - { path: ^/profil/modifier, roles: ROLE_USER }
+        - { path: '^/profil($|/)', roles: ROLE_USER }
+        - { path: ^/conducteur/, roles: ROLE_USER }
         - { path: ^/mon-profil, roles: ROLE_USER }
-        - { path: ^/noter, roles: ROLE_USER }
 
 when@test:
     security:

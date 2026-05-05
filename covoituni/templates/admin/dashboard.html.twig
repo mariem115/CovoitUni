@@ -64,7 +64,7 @@
                             </div>
                             <div class="text-end small">
                                 <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ r.status }}</span>
-                                <div class="text-secondary">{{ r.createdAt|date('Y-m-d H:i') }}</div>
+                                <div class="text-secondary">{{ r.createdAt is not null ? r.createdAt|date('Y-m-d H:i') : '—' }}</div>
                             </div>
                         </li>
                     {% endfor %}

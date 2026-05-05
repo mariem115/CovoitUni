@@ -22,7 +22,7 @@ class UserService
     }
 
     /**
-     * HTML snippet with Bootstrap Icons stars (filled / half / empty).
+     * HTML snippet with Font Awesome stars (filled / half / empty).
      */
     public function getStarDisplay(float $rating): string
     {
@@ -34,13 +34,13 @@ class UserService
 
         $html = '<span class="cu-star-display d-inline-flex align-items-center gap-0 text-warning" role="img" aria-label="'.htmlspecialchars(sprintf('Note %.1f sur 5', $rating), ENT_QUOTES, 'UTF-8').'">';
         for ($i = 0; $i < $full; ++$i) {
-            $html .= '<i class="bi bi-star-fill" aria-hidden="true"></i>';
+            $html .= '<i class="fa-solid fa-star" aria-hidden="true"></i>';
         }
         if (1 === $half) {
-            $html .= '<i class="bi bi-star-half" aria-hidden="true"></i>';
+            $html .= '<i class="fa-solid fa-star-half-stroke" aria-hidden="true"></i>';
         }
         for ($i = 0; $i < $empty; ++$i) {
-            $html .= '<i class="bi bi-star" aria-hidden="true"></i>';
+            $html .= '<i class="fa-regular fa-star" aria-hidden="true"></i>';
         }
         $html .= '</span>';
 

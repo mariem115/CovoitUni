@@ -54,22 +54,45 @@ class TripRepository extends ServiceEntityRepository
     /**
      * @return list<Trip>
      */
-    public function searchTrips(string $departure, string $destination, ?\DateTimeImmutable $date, int $minSeats = 1): array
-    {
-        return $this->createSearchTripsQueryBuilder($departure, $destination, $date, $minSeats)
+    public function searchTrips(
+        string $departure,
+        string $destination,
+        ?\DateTimeImmutable $date,
+        int $minSeats = 1,
+        ?string $maxPrice = null,
+        bool $onlyWithAvailability = true,
+    ): array {
+        return $this->createSearchTripsQueryBuilder($departure, $destination, $date, $minSeats, $maxPrice, $onlyWithAvailability)
             ->getQuery()
             ->getResult();
     }
 
-    public function createSearchTripsQueryBuilder(string $departure, string $destination, ?\DateTimeImmutable $date, int $minSeats = 1): QueryBuilder
-    {
+    public function createSearchTripsQueryBuilder(
+        string $departure,
+        string $destination,
+        ?\DateTimeImmutable $date,
+        int $minSeats = 1,
+        ?string $maxPrice = null,
+        bool $onlyWithAvailability = true,
+    ): QueryBuilder {
         $qb = $this->createQueryBuilder('t')
             ->innerJoin('t.driver', 'd')->addSelect('d')
             ->andWhere('t.isActive = :active')
+            ->andWhere('t.departureDateTime >= :now')
             ->setParameter('active', true)
-            ->andWhere('t.seatsAvailable >= :minSeats')
-            ->setParameter('minSeats', $minSeats)
+            ->setParameter('now', new \DateTimeImmutable())
             ->orderBy('t.departureDateTime', 'ASC');
+
+        if ($onlyWithAvailability) {
+            $qb->andWhere('t.seatsAvailable >= :minSeats')
+                ->setParameter('minSeats', $minSeats);
+        }
+
+        if (null !== $maxPrice && '' !== $maxPrice) {
+            $qb->andWhere('(t.pricePerSeat IS NULL OR t.pricePerSeat = :emptyStr OR t.pricePerSeat <= :maxPrice)')
+                ->setParameter('emptyStr', '')
+                ->setParameter('maxPrice', $maxPrice);
+        }
 
         $departure = trim($departure);
         if ($departure !== '') {
@@ -186,5 +209,17 @@ class TripRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    public function findPublicDetailById(int $id): ?Trip
+    {
+        return $this->createQueryBuilder('t')
+            ->innerJoin('t.driver', 'd')->addSelect('d')
+            ->leftJoin('d.receivedRatings', 'rt')->addSelect('rt')
+            ->leftJoin('rt.reviewer', 'rev')->addSelect('rev')
+            ->andWhere('t.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

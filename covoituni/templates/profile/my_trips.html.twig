@@ -14,17 +14,17 @@
                         <span class="badge bg-secondary-subtle text-secondary border">Retiré</span>
                     {% endif %}
                 </div>
-                <p class="small text-muted mb-2"><i class="bi bi-calendar-event me-1"></i>{{ trip.departureDateTime|date('d/m/Y H:i') }}</p>
+                <p class="small text-muted mb-2"><i class="fa-solid fa-calendar me-1"></i>{{ trip.departureDateTime|date('d/m/Y H:i') }}</p>
                 <p class="small mb-2">{{ trip.seatsAvailable }} place(s) libre(s) · {{ trip.pricePerSeat ? trip.pricePerSeat|number_format(2, ',', ' ') ~ ' TND' : 'Gratuit' }}</p>
                 <p class="small mb-3">
                     <span class="badge bg-primary-subtle text-primary border rounded-pill">
-                        <i class="bi bi-people me-1"></i>{{ trip.bookedPassengerSeats }} passager(s)
+                        <i class="fa-solid fa-users me-1"></i>{{ trip.bookedPassengerSeats }} passager(s)
                     </span>
                 </p>
                 <div class="mt-auto d-flex flex-wrap gap-2">
                     <a href="{{ path('app_trip_show', { id: trip.id }) }}" class="btn btn-outline-primary btn-sm">Voir</a>
                     {% if is_granted('EDIT', trip) %}
-                        <a href="{{ path('app_trip_passengers', { tripId: trip.id }) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-people me-1"></i>Passagers</a>
+                        <a href="{{ path('app_trip_passengers', { tripId: trip.id }) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-users me-1"></i>Passagers</a>
                         <a href="{{ path('app_trip_edit', { id: trip.id }) }}" class="btn btn-outline-secondary btn-sm">Modifier</a>
                     {% endif %}
                     {% if is_granted('DELETE', trip) and trip.isActive %}
@@ -45,7 +45,10 @@
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <h1 class="h3 fw-bold mb-0">Mes trajets</h1>
-        <a href="{{ path('app_trip_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nouveau trajet</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ path('app_profile_edit') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-user-gear me-1"></i>Profil et véhicule</a>
+            <a href="{{ path('app_trip_new') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i>Nouveau trajet</a>
+        </div>
     </div>
 
     <h2 class="h5 fw-bold mb-3">Mes trajets à venir</h2>

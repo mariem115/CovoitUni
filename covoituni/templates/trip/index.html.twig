@@ -19,24 +19,53 @@
         >
             <div class="card-body p-4">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
+                    <div class="col-md-6 col-lg-2">
                         <label class="form-label small text-muted">Départ</label>
-                        <input type="text" name="departure" class="form-control" value="{{ departure }}" placeholder="Ville de départ" autocomplete="off" data-search-field>
+                        <select name="departure" class="form-select ville-select" data-searchable="true" data-search-field>
+                            <option value="">-- Ville de départ --</option>
+                            {% for label, value in villes %}
+                                {% if value == 'disabled' %}
+                                    <option value="" disabled>{{ label }}</option>
+                                {% else %}
+                                    <option value="{{ value }}" {{ departure == value ? 'selected' : '' }}>{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-6 col-lg-2">
                         <label class="form-label small text-muted">Destination</label>
-                        <input type="text" name="destination" class="form-control" value="{{ destination }}" placeholder="Destination" autocomplete="off" data-search-field>
+                        <select name="destination" class="form-select ville-select" data-searchable="true" data-search-field>
+                            <option value="">-- Ville d'arrivée --</option>
+                            {% for label, value in villes %}
+                                {% if value == 'disabled' %}
+                                    <option value="" disabled>{{ label }}</option>
+                                {% else %}
+                                    <option value="{{ value }}" {{ destination == value ? 'selected' : '' }}>{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-4 col-lg-2">
                         <label class="form-label small text-muted">Date</label>
                         <input type="date" name="date" class="form-control" value="{{ date }}" data-search-field>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-4 col-lg-2">
                         <label class="form-label small text-muted">Places min.</label>
                         <input type="number" name="seats" class="form-control" value="{{ seats }}" min="1" max="8" data-search-field>
                     </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Rechercher</button>
+                    <div class="col-md-4 col-lg-2">
+                        <label class="form-label small text-muted">Prix max. (TND)</label>
+                        <input type="number" name="maxPrice" class="form-control" value="{{ maxPrice }}" min="0" step="0.01" placeholder="Sans limite" data-search-field>
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <label class="form-label small text-muted">Disponibilité</label>
+                        <select name="disponible" class="form-select" data-search-field>
+                            <option value="1" {{ disponible == 1 ? 'selected' : '' }}>Avec places libres</option>
+                            <option value="0" {{ disponible == 0 ? 'selected' : '' }}>Tous (y compris complets)</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-lg-12 col-xl-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-magnifying-glass me-1"></i>Rechercher</button>
                     </div>
                 </div>
             </div>
@@ -45,11 +74,11 @@
 
     <p class="small text-muted mb-2">Suggestions rapides :</p>
     <div class="d-flex flex-wrap gap-2 mb-4">
-        <a href="{{ path('app_trip_index', { departure: 'Tunis', destination: 'Sousse', seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-primary-subtle text-primary border">Tunis → Sousse</a>
-        <a href="{{ path('app_trip_index', { departure: 'Sousse', destination: 'Tunis', seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-primary-subtle text-primary border">Sousse → Tunis</a>
-        <a href="{{ path('app_trip_index', { departure: 'Tunis', seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-secondary-subtle text-secondary border">Au départ de Tunis</a>
-        <a href="{{ path('app_trip_index', { destination: 'Sousse', seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-secondary-subtle text-secondary border">Vers Sousse</a>
-        <a href="{{ path('app_trip_index', { seats: seats }) }}" class="badge rounded-pill text-decoration-none bg-light text-dark border">Tous les trajets</a>
+        <a href="{{ path('app_trip_index', { departure: 'Tunis', destination: 'Sousse', seats: seats, disponible: disponible, maxPrice: maxPrice }) }}" class="badge rounded-pill text-decoration-none bg-primary-subtle text-primary border">Tunis → Sousse</a>
+        <a href="{{ path('app_trip_index', { departure: 'Sousse', destination: 'Tunis', seats: seats, disponible: disponible, maxPrice: maxPrice }) }}" class="badge rounded-pill text-decoration-none bg-primary-subtle text-primary border">Sousse → Tunis</a>
+        <a href="{{ path('app_trip_index', { departure: 'Tunis', seats: seats, disponible: disponible, maxPrice: maxPrice }) }}" class="badge rounded-pill text-decoration-none bg-secondary-subtle text-secondary border">Au départ de Tunis</a>
+        <a href="{{ path('app_trip_index', { destination: 'Sousse', seats: seats, disponible: disponible, maxPrice: maxPrice }) }}" class="badge rounded-pill text-decoration-none bg-secondary-subtle text-secondary border">Vers Sousse</a>
+        <a href="{{ path('app_trip_index', { seats: seats, disponible: disponible, maxPrice: maxPrice }) }}" class="badge rounded-pill text-decoration-none bg-light text-dark border">Tous les trajets</a>
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -60,8 +89,8 @@
             <div class="spinner-border spinner-border-sm text-primary d-none" role="status" data-search-target="spinner" aria-hidden="true">
                 <span class="visually-hidden">Chargement…</span>
             </div>
-            {% if is_granted('ROLE_USER') %}
-                <a href="{{ path('app_trip_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Proposer un trajet</a>
+            {% if is_granted('ROLE_CONDUCTEUR') %}
+                <a href="{{ path('app_trip_new') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i>Proposer un trajet</a>
             {% endif %}
         </div>
     </div>

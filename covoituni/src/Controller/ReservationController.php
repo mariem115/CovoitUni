@@ -19,7 +19,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class ReservationController extends AbstractController
 {
     #[Route('/reserver/{tripId}', name: 'app_reservation_book', requirements: ['tripId' => '\d+'], methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_PASSAGER')]
     public function book(
         Request $request,
         #[MapEntity(id: 'tripId')]
@@ -28,7 +28,7 @@ class ReservationController extends AbstractController
         ReservationRepository $reservationRepository,
         MailerService $mailerService,
     ): Response {
-        $this->denyAccessUnlessGranted('ROLE_USER');
+        $this->denyAccessUnlessGranted('ROLE_PASSAGER');
 
         $token = $request->request->getString('_token');
         if (!$this->isCsrfTokenValid('book_trip_'.$trip->getId(), $token)) {
@@ -41,25 +41,25 @@ class ReservationController extends AbstractController
         if ($user->getId() === $trip->getDriver()?->getId()) {
             $this->addFlash('danger', 'Vous ne pouvez pas réserver votre propre trajet.');
 
-            return $this->redirectToRoute('app_trip_show', ['id' => $trip->getId()]);
+            return $this->redirectToRoute('app_trajet_detail', ['id' => $trip->getId()]);
         }
 
         if (($trip->getSeatsAvailable() ?? 0) < 1) {
             $this->addFlash('danger', 'Ce trajet n\'a plus de places disponibles.');
 
-            return $this->redirectToRoute('app_trip_show', ['id' => $trip->getId()]);
+            return $this->redirectToRoute('app_trajet_detail', ['id' => $trip->getId()]);
         }
 
         if (!$trip->isActive()) {
             $this->addFlash('danger', 'Ce trajet n\'accepte plus de réservations.');
 
-            return $this->redirectToRoute('app_trip_show', ['id' => $trip->getId()]);
+            return $this->redirectToRoute('app_trajet_detail', ['id' => $trip->getId()]);
         }
 
         if (null !== $reservationRepository->findBlockingReservationForPassenger($trip, $user)) {
             $this->addFlash('danger', 'Vous avez déjà une réservation en cours pour ce trajet.');
 
-            return $this->redirectToRoute('app_trip_show', ['id' => $trip->getId()]);
+            return $this->redirectToRoute('app_trajet_detail', ['id' => $trip->getId()]);
         }
 
         $reservation = new Reservation();
@@ -81,7 +81,7 @@ class ReservationController extends AbstractController
     }
 
     #[Route('/reservation/{id}/annuler', name: 'app_reservation_cancel', requirements: ['id' => '\d+'], methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_PASSAGER')]
     public function cancel(
         Request $request,
         Reservation $reservation,
@@ -107,8 +107,14 @@ class ReservationController extends AbstractController
             return $this->redirectToRoute('app_reservation_my');
         }
 
-        $reservation->setStatus('cancelled');
         $trip = $reservation->getTrip();
+        if (null !== $trip && $trip->getDepartureDateTime() < new \DateTimeImmutable()) {
+            $this->addFlash('warning', 'Vous ne pouvez plus annuler : le trajet a déjà eu lieu.');
+
+            return $this->redirectToRoute('app_reservation_my');
+        }
+
+        $reservation->setStatus('cancelled');
         if (null !== $trip) {
             $trip->setSeatsAvailable($trip->getSeatsAvailable() + $reservation->getSeatsBooked());
         }
@@ -122,7 +128,7 @@ class ReservationController extends AbstractController
     }
 
     #[Route('/reservation/{id}/confirmer', name: 'app_reservation_confirm', requirements: ['id' => '\d+'], methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_CONDUCTEUR')]
     public function confirm(
         Request $request,
         Reservation $reservation,
@@ -158,7 +164,7 @@ class ReservationController extends AbstractController
     }
 
     #[Route('/reservation/{id}/refuser', name: 'app_reservation_reject', requirements: ['id' => '\d+'], methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_CONDUCTEUR')]
     public function reject(
         Request $request,
         Reservation $reservation,
@@ -196,7 +202,7 @@ class ReservationController extends AbstractController
     }
 
     #[Route('/mes-reservations', name: 'app_reservation_my', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_PASSAGER')]
     public function myReservations(ReservationRepository $reservationRepository): Response
     {
         /** @var User $user */
@@ -233,7 +239,7 @@ class ReservationController extends AbstractController
     }
 
     #[Route('/mes-trajets/{tripId}/passagers', name: 'app_trip_passengers', requirements: ['tripId' => '\d+'], methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_CONDUCTEUR')]
     public function tripPassengers(
         #[MapEntity(id: 'tripId')]
         Trip $trip,

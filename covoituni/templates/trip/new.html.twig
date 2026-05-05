@@ -19,7 +19,7 @@
                             {{ form_row(form.pricePerSeat) }}
                             {{ form_row(form.description) }}
                             <button type="submit" class="btn btn-primary">Publier le trajet</button>
-                            <a href="{{ path('app_trip_index') }}" class="btn btn-link">Annuler</a>
+                            <a href="{{ path('app_profile_trips') }}" class="btn btn-link">Annuler</a>
                             {{ form_end(form) }}
                         </div>
                     </div>
@@ -32,7 +32,7 @@
                                 <div class="card-body">
                                     <p class="fw-semibold mb-1" id="pv-route">
                                         <span id="pv-dep">—</span>
-                                        <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                                        <i class="fa-solid fa-arrow-right mx-1 text-muted"></i>
                                         <span id="pv-dest">—</span>
                                     </p>
                                     <p class="small text-muted mb-2" id="pv-datetime">Date et heure : —</p>

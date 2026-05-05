@@ -49,6 +49,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 150, nullable: true)]
     private ?string $university = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $vehiculeMarque = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $vehiculeModele = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $vehiculeCouleur = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $vehiculeAnnee = null;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $bio = null;
 
@@ -86,6 +98,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $receivedRatings;
 
     public function __construct()
+    {
+        $this->initializeAssociationCollections();
+    }
+
+    private function initializeAssociationCollections(): void
     {
         $this->tripsAsDriver = new ArrayCollection();
         $this->reservations = new ArrayCollection();
@@ -215,6 +232,54 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getVehiculeMarque(): ?string
+    {
+        return $this->vehiculeMarque;
+    }
+
+    public function setVehiculeMarque(?string $vehiculeMarque): static
+    {
+        $this->vehiculeMarque = $vehiculeMarque;
+
+        return $this;
+    }
+
+    public function getVehiculeModele(): ?string
+    {
+        return $this->vehiculeModele;
+    }
+
+    public function setVehiculeModele(?string $vehiculeModele): static
+    {
+        $this->vehiculeModele = $vehiculeModele;
+
+        return $this;
+    }
+
+    public function getVehiculeCouleur(): ?string
+    {
+        return $this->vehiculeCouleur;
+    }
+
+    public function setVehiculeCouleur(?string $vehiculeCouleur): static
+    {
+        $this->vehiculeCouleur = $vehiculeCouleur;
+
+        return $this;
+    }
+
+    public function getVehiculeAnnee(): ?int
+    {
+        return $this->vehiculeAnnee;
+    }
+
+    public function setVehiculeAnnee(?int $vehiculeAnnee): static
+    {
+        $this->vehiculeAnnee = $vehiculeAnnee;
+
+        return $this;
+    }
+
     public function getBio(): ?string
     {
         return $this->bio;
@@ -287,15 +352,57 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->getFullName();
     }
 
+    public function getEaCreatedAt(): string
+    {
+        return $this->createdAt instanceof \DateTimeInterface ? $this->createdAt->format('d/m/Y H:i') : '—';
+    }
+
     /**
-     * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
+     * État minimal pour la session / jeton Security : ne pas inclure les collections Doctrine,
+     * sinon PHP sérialise tout le graphe (trajets → réservations → …) et peut bloquer >120 s au chargement.
+     *
+     * @see PasswordAuthenticatedUserInterface (Symfony 7.3 — empreinte crc32c sur le hash)
      */
     public function __serialize(): array
     {
-        $data = (array) $this;
-        $data["\0".self::class."\0password"] = hash('crc32c', $this->password);
+        return [
+            'id' => $this->id,
+            'email' => $this->email,
+            'roles' => $this->roles,
+            'password' => null !== $this->password ? hash('crc32c', $this->password) : null,
+            'firstName' => $this->firstName,
+            'lastName' => $this->lastName,
+        ];
+    }
 
-        return $data;
+    public function __unserialize(array $data): void
+    {
+        $this->initializeAssociationCollections();
+
+        if (\array_key_exists('email', $data)) {
+            $this->id = $data['id'] ?? null;
+            $this->email = $data['email'];
+            $this->roles = \is_array($data['roles'] ?? null) ? $data['roles'] : [];
+            $this->password = $data['password'] ?? null;
+            $this->firstName = $data['firstName'] ?? null;
+            $this->lastName = $data['lastName'] ?? null;
+
+            return;
+        }
+
+        // Ancienne session : propriétés privées sous forme "\0Class\0prop"
+        $prefix = "\0".self::class."\0";
+        $this->id = $data[$prefix.'id'] ?? null;
+        $this->email = $data[$prefix.'email'] ?? '';
+        $this->roles = \is_array($data[$prefix.'roles'] ?? null) ? $data[$prefix.'roles'] : [];
+        $pw = $data[$prefix.'password'] ?? null;
+        if (null !== $pw && '' !== $pw && 8 !== \strlen((string) $pw)) {
+            $this->password = hash('crc32c', (string) $pw);
+        } else {
+            $this->password = $pw;
+        }
+        $this->firstName = $data[$prefix.'firstName'] ?? null;
+        $this->lastName = $data[$prefix.'lastName'] ?? null;
     }
 
     /**

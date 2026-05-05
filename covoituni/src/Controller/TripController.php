@@ -5,9 +5,11 @@ namespace App\Controller;
 use App\Entity\Trip;
 use App\Entity\User;
 use App\Form\TripType;
+use App\Repository\RatingRepository;
 use App\Repository\ReservationRepository;
 use App\Repository\TripRepository;
 use App\Security\TripVoter;
+use App\Service\LocationData;
 use App\Service\TripService;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
@@ -20,7 +22,43 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class TripController extends AbstractController
 {
+    #[Route('/trajet/{id}', name: 'app_trajet_detail', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function detail(
+        int $id,
+        TripRepository $tripRepository,
+        RatingRepository $ratingRepository,
+        TripService $tripService,
+    ): Response {
+        $trip = $tripRepository->findPublicDetailById($id);
+        if (!$trip instanceof Trip) {
+            throw $this->createNotFoundException();
+        }
+
+        if (!$trip->isActive()) {
+            throw $this->createNotFoundException();
+        }
+
+        $driver = $trip->getDriver();
+        if (!$driver instanceof User) {
+            throw $this->createNotFoundException();
+        }
+
+        $ratings = $ratingRepository->findReceivedForDriverOrdered($driver);
+        $recentRatings = \array_slice($ratings, 0, 3);
+        $bookInfo = $tripService->canUserBook($trip, $this->getUser() instanceof User ? $this->getUser() : null);
+
+        return $this->render('trajet/detail.html.twig', [
+            'trip' => $trip,
+            'driver' => $driver,
+            'recentRatings' => $recentRatings,
+            'ratingsCount' => \count($ratings),
+            'bookInfo' => $bookInfo,
+        ]);
+    }
+
     #[Route('/trajets', name: 'app_trip_index', methods: ['GET'])]
+    #[IsGranted('ROLE_PASSAGER')]
     public function index(
         Request $request,
         TripRepository $tripRepository,
@@ -30,21 +68,23 @@ class TripController extends AbstractController
         $destination = $request->query->getString('destination');
         $dateStr = $request->query->getString('date');
         $minSeats = max(1, (int) $request->query->get('seats', 1));
+        $maxPriceStr = trim($request->query->getString('maxPrice'));
+        $maxPrice = '' !== $maxPriceStr && is_numeric($maxPriceStr) ? $maxPriceStr : null;
+        $onlyWithAvailability = $request->query->getInt('disponible', 1) === 1;
 
         $date = null;
         if ($dateStr !== '') {
             $date = \DateTimeImmutable::createFromFormat('Y-m-d', $dateStr) ?: null;
         }
 
-        $hasSearch = trim($departure) !== '' || trim($destination) !== '' || null !== $date;
-
-        if ($hasSearch) {
-            $qb = $tripRepository->createSearchTripsQueryBuilder($departure, $destination, $date, $minSeats);
-        } else {
-            $qb = $tripRepository->createActiveTripsQueryBuilder()
-                ->andWhere('t.seatsAvailable >= :minSeats')
-                ->setParameter('minSeats', $minSeats);
-        }
+        $qb = $tripRepository->createSearchTripsQueryBuilder(
+            $departure,
+            $destination,
+            $date,
+            $minSeats,
+            $maxPrice,
+            $onlyWithAvailability,
+        );
 
         $pagination = $paginator->paginate(
             $qb,
@@ -72,11 +112,14 @@ class TripController extends AbstractController
             'destination' => $destination,
             'date' => $dateStr,
             'seats' => $minSeats,
+            'maxPrice' => $maxPriceStr,
+            'disponible' => $onlyWithAvailability ? 1 : 0,
+            'villes' => LocationData::VILLES,
         ]);
     }
 
     #[Route('/trajets/nouveau', name: 'app_trip_new', methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_CONDUCTEUR')]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         /** @var User $user */
@@ -108,6 +151,7 @@ class TripController extends AbstractController
     }
 
     #[Route('/trajets/{id}', name: 'app_trip_show', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function show(
         Trip $trip,
         ReservationRepository $reservationRepository,
@@ -137,7 +181,7 @@ class TripController extends AbstractController
     }
 
     #[Route('/trajets/{id}/modifier', name: 'app_trip_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_CONDUCTEUR')]
     public function edit(Request $request, Trip $trip, EntityManagerInterface $entityManager): Response
     {
         $this->denyAccessUnlessGranted(TripVoter::EDIT, $trip);
@@ -171,7 +215,7 @@ class TripController extends AbstractController
     }
 
     #[Route('/trajets/{id}/supprimer', name: 'app_trip_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_CONDUCTEUR')]
     public function delete(Request $request, Trip $trip, EntityManagerInterface $entityManager): Response
     {
         $this->denyAccessUnlessGranted(TripVoter::DELETE, $trip);

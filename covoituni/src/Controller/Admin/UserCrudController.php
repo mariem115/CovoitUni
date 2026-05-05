@@ -14,17 +14,25 @@ use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_ADMIN')]
 class UserCrudController extends AbstractCrudController
 {
+    public function __construct(
+        private readonly UserPasswordHasherInterface $passwordHasher,
+    ) {
+    }
+
     public static function getEntityFqcn(): string
     {
         return User::class;
@@ -51,14 +59,15 @@ class UserCrudController extends AbstractCrudController
         yield TextField::new('firstName');
         yield TextField::new('lastName');
         yield EmailField::new('email');
+        yield TextField::new('password', 'Mot de passe (clair)')
+            ->setFormType(PasswordType::class)
+            ->onlyWhenCreating()
+            ->setRequired(true);
         yield TextField::new('university');
         yield ArrayField::new('roles');
-        yield TextField::new('eaCreatedAt', 'Created at')
-            ->setVirtual(true)
-            ->formatValue(static function (mixed $value, ?User $entity): string {
-                $dt = $entity?->getCreatedAt();
-
-                return $dt instanceof \DateTimeInterface ? $dt->format('d/m/Y H:i') : '';
+        yield DateTimeField::new('createdAt', 'Created at')
+            ->formatValue(static function (mixed $value): string {
+                return $value instanceof \DateTimeInterface ? $value->format('d/m/Y H:i') : '—';
             })
             ->hideOnForm();
         yield BooleanField::new('isVerified');
@@ -66,7 +75,7 @@ class UserCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        $banUser = Action::new('banUser', 'Ban User', 'bi bi-slash-circle')
+        $banUser = Action::new('banUser', 'Ban User', 'fa-solid fa-user-slash')
             ->linkToCrudAction('banUser')
             ->asDangerAction()
             ->renderAsForm()
@@ -107,5 +116,17 @@ class UserCrudController extends AbstractCrudController
         $this->addFlash('success', sprintf('User "%s" was banned.', $user->getEmail() ?? ''));
 
         return $this->redirect($adminUrlGenerator->setController(self::class)->setAction(Action::INDEX)->generateUrl());
+    }
+
+    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        if ($entityInstance instanceof User) {
+            $plain = $entityInstance->getPassword();
+            if (null !== $plain && '' !== $plain) {
+                $entityInstance->setPassword($this->passwordHasher->hashPassword($entityInstance, $plain));
+            }
+        }
+
+        parent::persistEntity($entityManager, $entityInstance);
     }
 }

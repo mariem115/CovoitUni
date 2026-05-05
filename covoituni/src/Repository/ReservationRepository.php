@@ -53,6 +53,7 @@ class ReservationRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('r')
             ->innerJoin('r.trip', 't')->addSelect('t')
             ->innerJoin('t.driver', 'd')->addSelect('d')
+            ->leftJoin('r.rating', 'rt')->addSelect('rt')
             ->andWhere('r.passenger = :user')
             ->setParameter('user', $user)
             ->orderBy('r.createdAt', 'DESC')

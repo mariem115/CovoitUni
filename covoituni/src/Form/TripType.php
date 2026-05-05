@@ -3,16 +3,16 @@
 namespace App\Form;
 
 use App\Entity\Trip;
+use App\Service\LocationData;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\GreaterThan;
-use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Range;
 
@@ -20,21 +20,31 @@ class TripType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $villesChoices = LocationData::getChoiceMap();
+
         $builder
-            ->add('departure', TextType::class, [
+            ->add('departure', ChoiceType::class, [
                 'label' => 'Ville de départ',
-                'attr' => ['placeholder' => 'Ex: Tunis'],
+                'choices' => $villesChoices,
+                'placeholder' => '-- Choisir une ville --',
+                'attr' => [
+                    'class' => 'form-select ville-select',
+                    'data-searchable' => 'true',
+                ],
                 'constraints' => [
                     new NotBlank(message: 'Indiquez la ville de départ.'),
-                    new Length(min: 3, max: 200),
                 ],
             ])
-            ->add('destination', TextType::class, [
+            ->add('destination', ChoiceType::class, [
                 'label' => 'Destination',
-                'attr' => ['placeholder' => 'Ex: Sousse'],
+                'choices' => $villesChoices,
+                'placeholder' => '-- Choisir une ville --',
+                'attr' => [
+                    'class' => 'form-select ville-select',
+                    'data-searchable' => 'true',
+                ],
                 'constraints' => [
                     new NotBlank(message: 'Indiquez la destination.'),
-                    new Length(min: 3, max: 200),
                 ],
             ])
             ->add('departureDateTime', DateTimeType::class, [

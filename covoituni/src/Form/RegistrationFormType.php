@@ -3,8 +3,10 @@
 namespace App\Form;
 
 use App\Entity\User;
+use App\Service\LocationData;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
@@ -40,9 +42,18 @@ class RegistrationFormType extends AbstractType
                     new NotBlank(message: 'Veuillez saisir votre nom.'),
                 ],
             ])
-            ->add('university', TextType::class, [
+            ->add('university', ChoiceType::class, [
                 'label' => 'Université',
-                'required' => false,
+                'choices' => LocationData::getUniversitiesGroupedChoices(),
+                'placeholder' => '-- Choisir votre université --',
+                'required' => true,
+                'attr' => [
+                    'class' => 'form-select',
+                    'data-searchable' => 'true',
+                ],
+                'constraints' => [
+                    new NotBlank(message: 'Veuillez sélectionner votre université.'),
+                ],
             ])
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,

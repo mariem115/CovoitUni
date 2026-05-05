@@ -4,13 +4,17 @@
 
 {% block body %}
 <div class="container py-4">
-    <a href="{{ path('app_trip_show', { id: trip.id }) }}" class="btn btn-link text-decoration-none ps-0 mb-3"><i class="bi bi-arrow-left me-1"></i>Retour au trajet</a>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a href="{{ path('app_profile_trips') }}" class="btn btn-link text-decoration-none ps-0"><i class="fa-solid fa-arrow-left me-1"></i>Mes trajets</a>
+        <span class="text-muted align-self-center">·</span>
+        <a href="{{ path('app_trip_show', { id: trip.id }) }}" class="btn btn-link text-decoration-none"><i class="fa-solid fa-location-dot me-1"></i>Ce trajet</a>
+    </div>
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
-            <h1 class="h4 fw-bold mb-2">{{ trip.departure }} <i class="bi bi-arrow-right text-primary"></i> {{ trip.destination }}</h1>
-            <p class="text-muted mb-0"><i class="bi bi-calendar-event me-1"></i>{{ trip.departureDateTime|date('d/m/Y à H:i') }}
-                · <i class="bi bi-people ms-2 me-1"></i>{{ trip.seatsAvailable }} / {{ trip.seatsTotal }} places libres</p>
+            <h1 class="h4 fw-bold mb-2">{{ trip.departure }} <i class="fa-solid fa-arrow-right text-primary"></i> {{ trip.destination }}</h1>
+            <p class="text-muted mb-0"><i class="fa-solid fa-calendar me-1"></i>{{ trip.departureDateTime|date('d/m/Y à H:i') }}
+                · <i class="fa-solid fa-users ms-2 me-1"></i>{{ trip.seatsAvailable }} / {{ trip.seatsTotal }} places libres</p>
         </div>
     </div>
 

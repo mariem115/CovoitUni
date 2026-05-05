@@ -28,10 +28,39 @@
                         {{ form_errors(form.phone) }}
                     </div>
                     <div class="form-floating mb-3">
-                        {{ form_widget(form.university, { attr: { class: 'form-control', placeholder: ' ' } }) }}
+                        {{ form_widget(form.university, { attr: { class: 'form-select', placeholder: ' ', 'data-searchable': 'true' } }) }}
                         {{ form_label(form.university) }}
                         {{ form_errors(form.university) }}
                     </div>
+                    {% if form.vehiculeMarque is defined %}
+                    <h2 class="h6 text-uppercase text-muted fw-semibold mb-3 mt-2">Véhicule</h2>
+                    <div class="form-floating mb-3">
+                        {{ form_widget(form.vehiculeMarque, { attr: { class: 'form-control', placeholder: ' ' } }) }}
+                        {{ form_label(form.vehiculeMarque) }}
+                        {{ form_errors(form.vehiculeMarque) }}
+                    </div>
+                    <div class="form-floating mb-3">
+                        {{ form_widget(form.vehiculeModele, { attr: { class: 'form-control', placeholder: ' ' } }) }}
+                        {{ form_label(form.vehiculeModele) }}
+                        {{ form_errors(form.vehiculeModele) }}
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form_widget(form.vehiculeCouleur, { attr: { class: 'form-control', placeholder: ' ' } }) }}
+                                {{ form_label(form.vehiculeCouleur) }}
+                                {{ form_errors(form.vehiculeCouleur) }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form_widget(form.vehiculeAnnee, { attr: { class: 'form-control', placeholder: ' ' } }) }}
+                                {{ form_label(form.vehiculeAnnee) }}
+                                {{ form_errors(form.vehiculeAnnee) }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="form-floating mb-0">
                         {{ form_widget(form.bio, { attr: { class: 'form-control', placeholder: ' ', style: 'height:8rem' } }) }}
                         {{ form_label(form.bio) }}
